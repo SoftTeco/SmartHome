@@ -1,7 +1,9 @@
 package com.softteco.template.data.di
 
+import com.softteco.template.data.bluetooth.BluetoothByteParser
 import com.softteco.template.data.bluetooth.BluetoothHelper
 import com.softteco.template.data.bluetooth.BluetoothPermissionChecker
+import com.softteco.template.utils.BluetoothByteParserImpl
 import com.softteco.template.utils.BluetoothHelperImpl
 import com.softteco.template.utils.BluetoothPermissionCheckerImpl
 import dagger.Binds
@@ -19,4 +21,7 @@ internal interface BluetoothModule {
     @Binds
     fun bindBluetoothPermissionChecker(bluetoothPermissionChecker: BluetoothPermissionCheckerImpl):
         BluetoothPermissionChecker
+
+    @Binds
+    fun bindBluetoothByteParserImpl(bluetoothByteParserImpl: BluetoothByteParserImpl): BluetoothByteParser
 }

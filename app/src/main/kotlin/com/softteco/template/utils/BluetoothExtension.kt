@@ -1,5 +1,7 @@
 package com.softteco.template.utils
 
+import android.annotation.SuppressLint
+import android.bluetooth.BluetoothDevice
 import android.graphics.Color
 import com.softteco.template.Constants
 import com.softteco.template.Constants.BIT_SHIFT_VALUE
@@ -24,3 +26,6 @@ fun generateRandomColor(): Int {
         rnd.nextInt(Constants.BOUND_COLOR_VALUE)
     )
 }
+
+@SuppressLint("MissingPermission")
+fun getBluetoothDeviceName(bluetoothDevice: BluetoothDevice): String = bluetoothDevice.name

@@ -7,6 +7,9 @@ import android.location.LocationManager
 import android.os.Build
 import androidx.annotation.RequiresApi
 import com.softteco.template.MainActivity
+import com.softteco.template.data.bluetooth.BluetoothPermissionChecker
+import javax.inject.Inject
+import javax.inject.Singleton
 
 const val REQUEST_ALLOW_BT = 1
 
@@ -26,19 +29,15 @@ enum class PermissionType {
     BLUETOOTH_TURNED_OFF, LOCATION_TURNED_OFF, BLUETOOTH_AND_LOCATION_TURNED_ON
 }
 
-object BluetoothPermissionChecker {
-    fun checkBluetoothSupport(
+@Singleton
+internal class BluetoothPermissionCheckerImpl @Inject constructor() : BluetoothPermissionChecker {
+    override fun checkBluetoothSupport(
         bluetoothAdapter: BluetoothAdapter?,
         activity: MainActivity
-    ): Boolean {
-        return when {
-            bluetoothAdapter == null -> false
-            !activity.packageManager?.hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE)!! -> false
-            else -> true
-        }
-    }
+    ) = bluetoothAdapter != null &&
+            activity.packageManager?.hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE) == true
 
-    fun checkEnableDeviceModules(
+    override fun checkEnableDeviceModules(
         bluetoothAdapter: BluetoothAdapter?,
         locationManager: LocationManager?
     ): PermissionType {
@@ -55,36 +54,15 @@ object BluetoothPermissionChecker {
         return permissionType
     }
 
-    fun hasPermissions(activity: MainActivity): Boolean {
-        var hasPermission = true
-        when {
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-                PERMISSIONS_FOR_BLUETOOTH_AFTER_ANDROID_12.forEach {
-                    if (!requestPermission(
-                            activity,
-                            it,
-                            PERMISSIONS_FOR_BLUETOOTH_AFTER_ANDROID_12
-                        )
-                    ) {
-                        hasPermission = false
-                    }
-                }
-            }
-
-            else -> {
-                PERMISSIONS_FOR_BLUETOOTH_BEFORE_ANDROID_12.forEach {
-                    if (!requestPermission(
-                            activity,
-                            it,
-                            PERMISSIONS_FOR_BLUETOOTH_BEFORE_ANDROID_12
-                        )
-                    ) {
-                        hasPermission = false
-                    }
-                }
-            }
+    override fun hasPermissions(activity: MainActivity): Boolean {
+        val permissionsToCheck = when {
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> PERMISSIONS_FOR_BLUETOOTH_AFTER_ANDROID_12
+            else -> PERMISSIONS_FOR_BLUETOOTH_BEFORE_ANDROID_12
         }
-        return hasPermission
+
+        return permissionsToCheck.all {
+            requestPermission(activity, it, permissionsToCheck)
+        }
     }
 
     private fun requestPermission(

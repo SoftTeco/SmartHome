@@ -1,6 +1,5 @@
 package com.softteco.template.ui.feature.bluetooth
 
-import android.annotation.SuppressLint
 import android.bluetooth.BluetoothDevice
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
@@ -14,6 +13,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -32,9 +32,9 @@ import com.softteco.template.R
 import com.softteco.template.ui.components.CustomTopAppBar
 import com.softteco.template.ui.components.OnLifecycleEvent
 import com.softteco.template.ui.theme.Dimens
+import com.softteco.template.utils.getBluetoothDeviceName
 import kotlinx.coroutines.launch
 
-@SuppressLint("MissingPermission")
 @Composable
 fun BluetoothScreen(
     onConnect: () -> Unit,
@@ -44,15 +44,16 @@ fun BluetoothScreen(
     val scope = rememberCoroutineScope()
     val state by viewModel.state.collectAsState()
     val deviceName = stringResource(R.string.device_name)
-    viewModel.filteredName = deviceName
 
-    viewModel.provideOnScanCallback {
-        viewModel.addScanResult(it)
-    }
-
-    viewModel.provideOnConnectCallback {
-        scope.launch {
-            onConnect.invoke()
+    LaunchedEffect(Unit) {
+        viewModel.filteredName = deviceName
+        viewModel.onScanCallback {
+            viewModel.addScanResult(it)
+        }
+        viewModel.onConnectCallback {
+            scope.launch {
+                onConnect()
+            }
         }
     }
 
@@ -73,7 +74,7 @@ fun BluetoothScreen(
             Lifecycle.Event.ON_RESUME -> {
                 viewModel.disconnectFromDevice()
                 viewModel.registerReceiver()
-                viewModel.provideOperation()
+                viewModel.startScanIfHasPermissions()
             }
 
             Lifecycle.Event.ON_PAUSE -> {
@@ -151,7 +152,6 @@ fun BluetoothDevicesList(
     }
 }
 
-@SuppressLint("MissingPermission")
 @Composable
 fun BluetoothDeviceCard(
     bluetoothDevice: BluetoothDevice,
@@ -177,7 +177,7 @@ fun BluetoothDeviceCard(
             )
             Column(Modifier.weight(1F)) {
                 Text(
-                    text = bluetoothDevice.name,
+                    text = getBluetoothDeviceName(bluetoothDevice),
                     overflow = TextOverflow.Ellipsis,
                     maxLines = 1
                 )

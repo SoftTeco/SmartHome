@@ -25,9 +25,9 @@ import com.softteco.template.Constants.INDEX_OF_HUMIDITY
 import com.softteco.template.Constants.START_INDEX_OF_BATTERY
 import com.softteco.template.Constants.START_INDEX_OF_TEMPERATURE
 import com.softteco.template.MainActivity
+import com.softteco.template.data.bluetooth.BluetoothHelper
 import com.softteco.template.data.bluetooth.entity.BluetoothState
 import com.softteco.template.data.bluetooth.entity.DataLYWSD03MMC
-import com.softteco.template.data.bluetooth.BluetoothHelper
 import no.nordicsemi.android.support.v18.scanner.BluetoothLeScannerCompat
 import no.nordicsemi.android.support.v18.scanner.ScanCallback
 import no.nordicsemi.android.support.v18.scanner.ScanResult
@@ -37,7 +37,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-internal class BluetoothHelperImpl @Inject constructor(): BluetoothHelper {
+internal class BluetoothHelperImpl @Inject constructor() : BluetoothHelper {
 
     private lateinit var activity: MainActivity
 
@@ -121,7 +121,7 @@ internal class BluetoothHelperImpl @Inject constructor(): BluetoothHelper {
     }
 
     private fun makeBluetoothOperation() {
-        if (BluetoothPermissionCheckerImpl.hasPermissions(activity)) {
+        if (BluetoothPermissionChecker.hasPermissions(activity)) {
             startScan()
         }
     }
@@ -210,11 +210,11 @@ internal class BluetoothHelperImpl @Inject constructor(): BluetoothHelper {
     }
 
     override fun provideOperation() {
-        if (BluetoothPermissionCheckerImpl.checkBluetoothSupport(bluetoothAdapter, activity) &&
-            BluetoothPermissionCheckerImpl.hasPermissions(activity)
+        if (BluetoothPermissionChecker.checkBluetoothSupport(bluetoothAdapter, activity) &&
+            BluetoothPermissionChecker.hasPermissions(activity)
         ) {
             when (
-                BluetoothPermissionCheckerImpl.checkEnableDeviceModules(
+                BluetoothPermissionChecker.checkEnableDeviceModules(
                     bluetoothAdapter,
                     locationManager
                 )

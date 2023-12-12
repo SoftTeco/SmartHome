@@ -20,11 +20,11 @@ import androidx.activity.result.contract.ActivityResultContracts
 import com.softteco.template.BuildConfig
 import com.softteco.template.MainActivity
 import com.softteco.template.data.bluetooth.BluetoothByteParser
-import com.softteco.template.data.bluetooth.entity.BluetoothState
-import com.softteco.template.data.bluetooth.entity.DataLYWSD03MMC
 import com.softteco.template.data.bluetooth.BluetoothHelper
 import com.softteco.template.data.bluetooth.BluetoothPermissionChecker
 import com.softteco.template.data.bluetooth.entity.BluetoothDeviceType
+import com.softteco.template.data.bluetooth.entity.BluetoothState
+import com.softteco.template.data.bluetooth.entity.DataLYWSD03MMC
 import no.nordicsemi.android.support.v18.scanner.BluetoothLeScannerCompat
 import no.nordicsemi.android.support.v18.scanner.ScanCallback
 import no.nordicsemi.android.support.v18.scanner.ScanResult

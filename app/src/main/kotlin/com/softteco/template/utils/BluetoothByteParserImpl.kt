@@ -30,7 +30,7 @@ internal class BluetoothByteParserImpl @Inject constructor() : BluetoothBytePars
             }
 
             BluetoothDeviceType.OTHER -> {
-                DataLYWSD03MMC() //Change to any new devices
+                DataLYWSD03MMC() // Change to any new devices
             }
         }
     }

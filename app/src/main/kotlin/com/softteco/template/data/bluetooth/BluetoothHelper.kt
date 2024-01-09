@@ -2,28 +2,35 @@ package com.softteco.template.data.bluetooth
 
 import android.bluetooth.BluetoothDevice
 import com.softteco.template.MainActivity
-import com.softteco.template.data.bluetooth.entity.DataLYWSD03MMC
+import com.softteco.template.data.bluetooth.entity.BluetoothDeviceData
 import no.nordicsemi.android.support.v18.scanner.ScanResult
 
 interface BluetoothHelper {
 
-    fun init(activity: MainActivity)
+    fun init(activity: MainActivity)//Passing the helper class of an Activity instance for the
+    // necessary actions when creating an Activity
+
+    fun drop()//Removing an Activity instance from the helper class when the activity is destroyed
 
     fun connectToDevice(bluetoothDevice: BluetoothDevice)
 
     fun disconnectFromDevice()
 
-    fun registerReceiver()
+    fun registerReceiver() //Register the receiver to track
+    // the events of turning the Bluetooth adapter on and off in relation to
+    // displaying the Bluetooth fragment.
 
-    fun unregisterReceiver()
+    fun unregisterReceiver()//Unregister the receiver to track
+    // the events of turning the Bluetooth adapter on and off in relation to
+    // displaying the Bluetooth fragment.
 
-    fun provideOperation()
+    fun operation()//Performing an operation using a Bluetooth adapter
 
-    fun provideOnScanCallback(onScanResult: (scanResult: ScanResult) -> Unit)
+    fun onScanCallback(onScanResult: (scanResult: ScanResult) -> Unit)
 
-    fun provideOnConnectCallback(onConnect: () -> Unit)
+    fun onConnectCallback(onConnect: () -> Unit)
 
-    fun provideOnDisconnectCallback(onDisconnect: () -> Unit)
+    fun onDisconnectCallback(onDisconnect: () -> Unit)
 
-    fun provideOnDeviceResultCallback(onDeviceResult: (dataLYWSD03MMC: DataLYWSD03MMC) -> Unit)
+    fun onDeviceResultCallback(onDeviceResult: (bluetoothDeviceData: BluetoothDeviceData) -> Unit)
 }

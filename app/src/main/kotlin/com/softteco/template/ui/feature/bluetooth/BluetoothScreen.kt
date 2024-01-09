@@ -14,6 +14,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -44,15 +45,16 @@ fun BluetoothScreen(
     val scope = rememberCoroutineScope()
     val state by viewModel.state.collectAsState()
     val deviceName = stringResource(R.string.device_name)
-    viewModel.filteredName = deviceName
 
-    viewModel.provideOnScanCallback {
-        viewModel.addScanResult(it)
-    }
-
-    viewModel.provideOnConnectCallback {
-        scope.launch {
-            onConnect.invoke()
+    LaunchedEffect(Unit) {
+        viewModel.filteredName = deviceName
+        viewModel.onScanCallback {
+            viewModel.addScanResult(it)
+        }
+        viewModel.onConnectCallback {
+            scope.launch {
+                onConnect()
+            }
         }
     }
 
@@ -73,7 +75,7 @@ fun BluetoothScreen(
             Lifecycle.Event.ON_RESUME -> {
                 viewModel.disconnectFromDevice()
                 viewModel.registerReceiver()
-                viewModel.provideOperation()
+                viewModel.operation()
             }
 
             Lifecycle.Event.ON_PAUSE -> {

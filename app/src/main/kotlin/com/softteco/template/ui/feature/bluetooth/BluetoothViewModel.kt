@@ -67,20 +67,20 @@ class BluetoothViewModel @Inject constructor(
         bluetoothHelper.unregisterReceiver()
     }
 
-    fun provideOperation() {
-        bluetoothHelper.provideOperation()
+    fun operation() {
+        bluetoothHelper.operation()
     }
 
     fun connectToDevice(bluetoothDevice: BluetoothDevice) {
         bluetoothHelper.connectToDevice(bluetoothDevice)
     }
 
-    fun provideOnScanCallback(onScanResult: (scanResult: ScanResult) -> Unit) {
-        bluetoothHelper.provideOnScanCallback(onScanResult)
+    fun onScanCallback(onScanResult: (scanResult: ScanResult) -> Unit) {
+        bluetoothHelper.onScanCallback(onScanResult)
     }
 
-    fun provideOnConnectCallback(onConnect: () -> Unit) {
-        bluetoothHelper.provideOnConnectCallback(onConnect)
+    fun onConnectCallback(onConnect: () -> Unit) {
+        bluetoothHelper.onConnectCallback(onConnect)
     }
 
     fun setFiltered(filtered: Boolean) {

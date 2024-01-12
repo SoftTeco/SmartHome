@@ -62,6 +62,6 @@ class MainActivity : ComponentActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        bluetoothHelper.init(this)
+        bluetoothHelper.drop()
     }
 }

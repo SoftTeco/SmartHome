@@ -75,7 +75,7 @@ fun BluetoothScreen(
             Lifecycle.Event.ON_RESUME -> {
                 viewModel.disconnectFromDevice()
                 viewModel.registerReceiver()
-                viewModel.operation()
+                viewModel.startScanIfHasPermissions()
             }
 
             Lifecycle.Event.ON_PAUSE -> {

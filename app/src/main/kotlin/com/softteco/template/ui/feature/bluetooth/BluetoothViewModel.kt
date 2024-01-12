@@ -67,8 +67,8 @@ class BluetoothViewModel @Inject constructor(
         bluetoothHelper.unregisterReceiver()
     }
 
-    fun operation() {
-        bluetoothHelper.operation()
+    fun startScanIfHasPermissions() {
+        bluetoothHelper.startScanIfHasPermissions()
     }
 
     fun connectToDevice(bluetoothDevice: BluetoothDevice) {

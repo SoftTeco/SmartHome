@@ -81,7 +81,7 @@ internal class BluetoothHelperImpl @Inject constructor() : BluetoothHelper, Blue
                     )
                 ) {
                     BluetoothAdapter.STATE_ON -> {
-                        operation()
+                        startScanIfHasPermissions()
                     }
 
                     BluetoothAdapter.STATE_OFF -> {
@@ -124,14 +124,6 @@ internal class BluetoothHelperImpl @Inject constructor() : BluetoothHelper, Blue
 
     private fun stopScan() {
         BluetoothLeScannerCompat.getScanner().stopScan(scanCallback)
-    }
-
-    private fun makeBluetoothOperation() {
-        activity?.let {
-            if (BluetoothPermissionChecker.hasPermissions(it)) {
-                startScan()
-            }
-        }
     }
 
     private val mGattCallback: BluetoothGattCallback = object : BluetoothGattCallback() {
@@ -224,7 +216,7 @@ internal class BluetoothHelperImpl @Inject constructor() : BluetoothHelper, Blue
         localGatt?.close()
     }
 
-    override fun operation() {
+    override fun startScanIfHasPermissions() {
         activity?.let {
             if (BluetoothPermissionChecker.checkBluetoothSupport(bluetoothAdapter, it) &&
                 BluetoothPermissionChecker.hasPermissions(it)
@@ -246,7 +238,7 @@ internal class BluetoothHelperImpl @Inject constructor() : BluetoothHelper, Blue
                     }
 
                     PermissionType.BLUETOOTH_AND_LOCATION_TURNED_ON -> {
-                        makeBluetoothOperation()
+                        startScan()
                     }
                 }
             }

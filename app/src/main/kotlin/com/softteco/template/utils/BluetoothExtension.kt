@@ -1,5 +1,7 @@
 package com.softteco.template.utils
 
+import android.annotation.SuppressLint
+import android.bluetooth.BluetoothDevice
 import com.softteco.template.Constants.BIT_SHIFT_VALUE
 
 @OptIn(ExperimentalUnsignedTypes::class)
@@ -11,3 +13,6 @@ fun characteristicByteConversation(bytes: ByteArray, startIndex: Int, endIndex: 
     }
     return result.toDouble()
 }
+
+@SuppressLint("MissingPermission")
+fun getBluetoothDeviceName(bluetoothDevice: BluetoothDevice): String = bluetoothDevice.name

@@ -34,13 +34,8 @@ internal class BluetoothPermissionCheckerImpl @Inject constructor() : BluetoothP
     override fun checkBluetoothSupport(
         bluetoothAdapter: BluetoothAdapter?,
         activity: MainActivity
-    ): Boolean {
-        return when {
-            bluetoothAdapter == null -> false
-            !activity.packageManager?.hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE)!! -> false
-            else -> true
-        }
-    }
+    ) = bluetoothAdapter != null &&
+            activity.packageManager?.hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE) == true
 
     override fun checkEnableDeviceModules(
         bluetoothAdapter: BluetoothAdapter?,
@@ -60,35 +55,14 @@ internal class BluetoothPermissionCheckerImpl @Inject constructor() : BluetoothP
     }
 
     override fun hasPermissions(activity: MainActivity): Boolean {
-        var hasPermission = true
-        when {
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-                PERMISSIONS_FOR_BLUETOOTH_AFTER_ANDROID_12.forEach {
-                    if (!requestPermission(
-                            activity,
-                            it,
-                            PERMISSIONS_FOR_BLUETOOTH_AFTER_ANDROID_12
-                        )
-                    ) {
-                        hasPermission = false
-                    }
-                }
-            }
-
-            else -> {
-                PERMISSIONS_FOR_BLUETOOTH_BEFORE_ANDROID_12.forEach {
-                    if (!requestPermission(
-                            activity,
-                            it,
-                            PERMISSIONS_FOR_BLUETOOTH_BEFORE_ANDROID_12
-                        )
-                    ) {
-                        hasPermission = false
-                    }
-                }
-            }
+        val permissionsToCheck = when {
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> PERMISSIONS_FOR_BLUETOOTH_AFTER_ANDROID_12
+            else -> PERMISSIONS_FOR_BLUETOOTH_BEFORE_ANDROID_12
         }
-        return hasPermission
+
+        return permissionsToCheck.all {
+            requestPermission(activity, it, permissionsToCheck)
+        }
     }
 
     private fun requestPermission(

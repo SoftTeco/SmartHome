@@ -1,11 +1,10 @@
 package com.softteco.template.ui.feature.chart
 
-import android.annotation.SuppressLint
 import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.softteco.template.data.bluetooth.BluetoothHelper
-import com.softteco.template.data.bluetooth.entity.DataLYWSD03MMC
+import com.softteco.template.data.bluetooth.entity.BluetoothDeviceData
 import com.softteco.template.ui.components.SnackBarState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -21,14 +20,14 @@ class ChartViewModel @Inject constructor(
 ) : ViewModel() {
 
     private var snackBarState = MutableStateFlow(SnackBarState())
-    private var dataFromLYWSD03MMC = MutableStateFlow(DataLYWSD03MMC())
+    private var dataFromBluetoothDevice = MutableStateFlow<BluetoothDeviceData>(BluetoothDeviceData.Default)
 
     val state = combine(
         snackBarState,
-        dataFromLYWSD03MMC
-    ) { snackBar, dataLYWSD03MMC ->
+        dataFromBluetoothDevice
+    ) { snackBar, dataFromBluetoothDevice ->
         State(
-            dataLYWSD03MMC = dataLYWSD03MMC,
+            dataFromBluetoothDevice = dataFromBluetoothDevice,
             snackBar = snackBar,
             dismissSnackBar = { snackBarState.value = SnackBarState() }
         )
@@ -38,20 +37,19 @@ class ChartViewModel @Inject constructor(
         State()
     )
 
-    fun provideOnDeviceResultCallback(onDeviceResult: (dataLYWSD03MMC: DataLYWSD03MMC) -> Unit) {
-        bluetoothHelper.provideOnDeviceResultCallback(onDeviceResult)
+    fun onDeviceResultCallback(onDeviceResult: (bluetoothDeviceData: BluetoothDeviceData) -> Unit) {
+        bluetoothHelper.onDeviceResultCallback(onDeviceResult)
     }
 
-    @SuppressLint("MissingPermission")
-    fun provideDataLYWSD03MMC(dataLYWSD03MMC: DataLYWSD03MMC) {
+    fun bluetoothData(bluetoothDeviceData: BluetoothDeviceData) {
         viewModelScope.launch {
-            dataFromLYWSD03MMC.value = dataLYWSD03MMC
+            dataFromBluetoothDevice.value = bluetoothDeviceData
         }
     }
 
     @Immutable
     data class State(
-        val dataLYWSD03MMC: DataLYWSD03MMC = DataLYWSD03MMC(),
+        val dataFromBluetoothDevice: BluetoothDeviceData = BluetoothDeviceData.Default,
         val snackBar: SnackBarState = SnackBarState(),
         val dismissSnackBar: () -> Unit = {}
     )

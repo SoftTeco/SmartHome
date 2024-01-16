@@ -22,9 +22,8 @@ import com.softteco.template.MainActivity
 import com.softteco.template.data.bluetooth.BluetoothByteParser
 import com.softteco.template.data.bluetooth.BluetoothHelper
 import com.softteco.template.data.bluetooth.BluetoothPermissionChecker
-import com.softteco.template.data.bluetooth.entity.BluetoothDeviceType
-import com.softteco.template.data.bluetooth.entity.BluetoothState
-import com.softteco.template.data.bluetooth.entity.DataLYWSD03MMC
+import com.softteco.template.data.bluetooth.BluetoothState
+import com.softteco.template.data.bluetooth.entity.BluetoothDeviceData
 import no.nordicsemi.android.support.v18.scanner.BluetoothLeScannerCompat
 import no.nordicsemi.android.support.v18.scanner.ScanCallback
 import no.nordicsemi.android.support.v18.scanner.ScanResult
@@ -33,43 +32,44 @@ import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 
+@SuppressLint("MissingPermission")
 @Singleton
 internal class BluetoothHelperImpl @Inject constructor(
     private val bluetoothPermissionChecker: BluetoothPermissionChecker,
     private val bluetoothByteParser: BluetoothByteParser
-) : BluetoothHelper {
+) : BluetoothHelper, BluetoothState {
 
-    private lateinit var activity: MainActivity
-
+    private var activity: MainActivity? = null
     private lateinit var bluetoothReceiver: BroadcastReceiver
     private lateinit var bluetoothManager: BluetoothManager
     private lateinit var bluetoothAdapter: BluetoothAdapter
     private lateinit var locationManager: LocationManager
     private var localGatt: BluetoothGatt? = null
-    private lateinit var resultBluetoothEnableLauncher: ActivityResultLauncher<Intent>
-    private lateinit var resultLocationEnableLauncher: ActivityResultLauncher<Intent>
-    var bluetoothState = BluetoothState()
+    private var resultBluetoothEnableLauncher: ActivityResultLauncher<Intent>? = null
+    private var resultLocationEnableLauncher: ActivityResultLauncher<Intent>? = null
+    override var onConnect: (() -> Unit)? = null
+    override var onDisconnect: (() -> Unit)? = null
+    override var onScanResult: ((scanResult: ScanResult) -> Unit)? = null
+    override var onDeviceResult: ((bluetoothDeviceData: BluetoothDeviceData) -> Unit)? = null
 
     private val scanCallback: ScanCallback = object : ScanCallback() {
-        @SuppressLint("MissingPermission")
         override fun onScanResult(
             callbackType: Int,
             scanResult: ScanResult
         ) {
             super.onScanResult(callbackType, scanResult)
             scanResult.device.name?.let {
-                bluetoothState.onScanResult?.invoke(scanResult)
+                onScanResult?.invoke(scanResult)
             }
         }
     }
 
-    @SuppressLint("MissingPermission")
     override fun init(activity: MainActivity) {
         this.activity = activity
         resultBluetoothEnableLauncher =
-            this.activity.registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {}
+            this.activity?.registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {}
         resultLocationEnableLauncher =
-            this.activity.registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {}
+            this.activity?.registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {}
         bluetoothReceiver = object : BroadcastReceiver() {
             override fun onReceive(context: Context, intent: Intent) {
                 when (
@@ -79,7 +79,7 @@ internal class BluetoothHelperImpl @Inject constructor(
                     )
                 ) {
                     BluetoothAdapter.STATE_ON -> {
-                        provideOperation()
+                        startScanIfHasPermissions()
                     }
 
                     BluetoothAdapter.STATE_OFF -> {
@@ -89,23 +89,26 @@ internal class BluetoothHelperImpl @Inject constructor(
             }
         }
         bluetoothManager =
-            this.activity.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
+            this.activity?.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
         bluetoothAdapter = bluetoothManager.adapter
         locationManager =
-            this.activity.getSystemService(Context.LOCATION_SERVICE) as LocationManager
+            this.activity?.getSystemService(Context.LOCATION_SERVICE) as LocationManager
+    }
+
+    override fun drop() {
+        this.activity = null
     }
 
     override fun registerReceiver() {
-        activity.registerReceiver(
+        activity?.registerReceiver(
             bluetoothReceiver,
             IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED)
         )
     }
 
-    @Suppress("TooGenericExceptionCaught")
     override fun unregisterReceiver() {
         try {
-            activity.unregisterReceiver(bluetoothReceiver)
+            activity?.unregisterReceiver(bluetoothReceiver)
         } catch (e: Exception) {
             Timber.e("Error unregister receiver", e)
         }
@@ -120,23 +123,15 @@ internal class BluetoothHelperImpl @Inject constructor(
         BluetoothLeScannerCompat.getScanner().stopScan(scanCallback)
     }
 
-    private fun makeBluetoothOperation() {
-        if (bluetoothPermissionChecker.hasPermissions(activity)) {
-            startScan()
-        }
-    }
-
     private val mGattCallback: BluetoothGattCallback = object : BluetoothGattCallback() {
-        @SuppressLint("MissingPermission")
         override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
             if (newState == BluetoothProfile.STATE_CONNECTED) {
                 localGatt = gatt
                 gatt.discoverServices()
-                bluetoothState.onConnect?.invoke()
+                onConnect?.invoke()
             }
         }
 
-        @SuppressLint("MissingPermission")
         override fun onServicesDiscovered(gatt: BluetoothGatt?, status: Int) {
             super.onServicesDiscovered(gatt, status)
             if (status == BluetoothGatt.GATT_SUCCESS) {
@@ -150,7 +145,6 @@ internal class BluetoothHelperImpl @Inject constructor(
             }
         }
 
-        @SuppressLint("MissingPermission")
         fun setCharacteristicNotification(
             bluetoothGatt: BluetoothGatt,
             characteristic: BluetoothGattCharacteristic,
@@ -176,72 +170,72 @@ internal class BluetoothHelperImpl @Inject constructor(
             characteristic: BluetoothGattCharacteristic
         ) {
             characteristic.value.let {
-                bluetoothState.onDeviceResult?.invoke(
+                onDeviceResult?.invoke(
                     bluetoothByteParser.parseBytes(
                         it,
                         BluetoothDeviceType.LYWSD03MMC
-                    ) as DataLYWSD03MMC
+                    ) as BluetoothDeviceData.DataLYWSD03MMC
                 )
             }
         }
     }
 
-    @SuppressLint("MissingPermission")
     override fun connectToDevice(bluetoothDevice: BluetoothDevice) {
         bluetoothDevice.connectGatt(
-            activity.applicationContext,
+            activity?.applicationContext,
             false,
             mGattCallback,
             BluetoothDevice.TRANSPORT_LE
         )
     }
 
-    @SuppressLint("MissingPermission")
     override fun disconnectFromDevice() {
         localGatt?.disconnect()
         localGatt?.close()
     }
 
-    override fun provideOperation() {
-        if (bluetoothPermissionChecker.checkBluetoothSupport(bluetoothAdapter, activity) &&
-            bluetoothPermissionChecker.hasPermissions(activity)
-        ) {
-            when (
-                bluetoothPermissionChecker.checkEnableDeviceModules(
-                    bluetoothAdapter,
-                    locationManager
-                )
+    override fun startScanIfHasPermissions() {
+        activity?.let {
+            if (bluetoothPermissionChecker.checkBluetoothSupport(bluetoothAdapter, it) &&
+                bluetoothPermissionChecker.hasPermissions(it)
             ) {
-                PermissionType.LOCATION_TURNED_OFF -> {
-                    val intent = Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)
-                    resultLocationEnableLauncher.launch(intent)
-                }
+                when (
+                    bluetoothPermissionChecker.checkEnableDeviceModules(
+                        bluetoothAdapter,
+                        locationManager
+                    )
+                ) {
+                    PermissionType.LOCATION_TURNED_OFF -> {
+                        val intent = Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)
+                        resultLocationEnableLauncher?.launch(intent)
+                    }
 
-                PermissionType.BLUETOOTH_TURNED_OFF -> {
-                    val intent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
-                    resultBluetoothEnableLauncher.launch(intent)
-                }
+                    PermissionType.BLUETOOTH_TURNED_OFF -> {
+                        val intent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
+                        resultBluetoothEnableLauncher?.launch(intent)
+                    }
 
-                PermissionType.BLUETOOTH_AND_LOCATION_TURNED_ON -> {
-                    makeBluetoothOperation()
+                    PermissionType.BLUETOOTH_AND_LOCATION_TURNED_ON -> {
+                        startScan()
+                    }
                 }
             }
         }
     }
 
-    override fun provideOnScanCallback(onScanResult: (scanResult: ScanResult) -> Unit) {
-        bluetoothState.onScanResult = onScanResult
+    override fun onScanCallback(onScanResult: (scanResult: ScanResult) -> Unit) {
+        this.onScanResult = onScanResult
     }
 
-    override fun provideOnConnectCallback(onConnect: () -> Unit) {
-        bluetoothState.onConnect = onConnect
+    override fun onConnectCallback(onConnect: () -> Unit) {
+        this.onConnect = onConnect
     }
 
-    override fun provideOnDisconnectCallback(onDisconnect: () -> Unit) {
-        bluetoothState.onDisconnect = onDisconnect
+    override fun onDisconnectCallback(onDisconnect: () -> Unit) {
+        this.onDisconnect = onDisconnect
     }
 
-    override fun provideOnDeviceResultCallback(onDeviceResult: (dataLYWSD03MMC: DataLYWSD03MMC) -> Unit) {
-        bluetoothState.onDeviceResult = onDeviceResult
+    override fun onDeviceResultCallback(onDeviceResult: (bluetoothDeviceData: BluetoothDeviceData) -> Unit) {
+        this.onDeviceResult = onDeviceResult
     }
 }

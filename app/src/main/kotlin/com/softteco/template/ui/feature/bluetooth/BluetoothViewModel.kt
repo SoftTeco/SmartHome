@@ -5,6 +5,7 @@ import android.bluetooth.BluetoothDevice
 import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.softteco.template.data.bluetooth.BluetoothHelper
 import com.softteco.template.ui.components.SnackBarState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -19,7 +20,9 @@ import no.nordicsemi.android.support.v18.scanner.ScanResult
 import javax.inject.Inject
 
 @HiltViewModel
-class BluetoothViewModel @Inject constructor() : ViewModel() {
+class BluetoothViewModel @Inject constructor(
+    private val bluetoothHelper: BluetoothHelper
+) : ViewModel() {
 
     private val _snackBarState = MutableStateFlow(SnackBarState())
     private var _bluetoothDevices = hashMapOf<String, ScanResult>()
@@ -50,6 +53,34 @@ class BluetoothViewModel @Inject constructor() : ViewModel() {
                 addDevice(scanResult)
             }
         }
+    }
+
+    fun disconnectFromDevice() {
+        bluetoothHelper.disconnectFromDevice()
+    }
+
+    fun registerReceiver() {
+        bluetoothHelper.registerReceiver()
+    }
+
+    fun unregisterReceiver() {
+        bluetoothHelper.unregisterReceiver()
+    }
+
+    fun startScanIfHasPermissions() {
+        bluetoothHelper.startScanIfHasPermissions()
+    }
+
+    fun connectToDevice(bluetoothDevice: BluetoothDevice) {
+        bluetoothHelper.connectToDevice(bluetoothDevice)
+    }
+
+    fun onScanCallback(onScanResult: (scanResult: ScanResult) -> Unit) {
+        bluetoothHelper.onScanCallback(onScanResult)
+    }
+
+    fun onConnectCallback(onConnect: () -> Unit) {
+        bluetoothHelper.onConnectCallback(onConnect)
     }
 
     fun setFiltered(filtered: Boolean) {

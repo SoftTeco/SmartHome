@@ -14,6 +14,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -32,7 +33,6 @@ import com.softteco.template.R
 import com.softteco.template.ui.components.CustomTopAppBar
 import com.softteco.template.ui.components.OnLifecycleEvent
 import com.softteco.template.ui.theme.Dimens
-import com.softteco.template.utils.BluetoothHelper
 import kotlinx.coroutines.launch
 
 @SuppressLint("MissingPermission")
@@ -45,22 +45,27 @@ fun BluetoothScreen(
     val scope = rememberCoroutineScope()
     val state by viewModel.state.collectAsState()
     val deviceName = stringResource(R.string.device_name)
-    viewModel.filteredName = deviceName
-    BluetoothHelper.onScanResult = {
-        viewModel.addScanResult(it)
-    }
-    BluetoothHelper.onConnect = {
-        scope.launch {
-            onConnect.invoke()
+
+    LaunchedEffect(Unit) {
+        viewModel.filteredName = deviceName
+        viewModel.onScanCallback {
+            viewModel.addScanResult(it)
+        }
+        viewModel.onConnectCallback {
+            scope.launch {
+                onConnect()
+            }
         }
     }
+
     val onFilter: (checked: Boolean) -> Unit = {
         viewModel.setFiltered(it)
     }
     ScreenContent(
         state = state,
         onItemClicked = { bluetoothDevice ->
-            BluetoothHelper.connectToBluetoothDevice(bluetoothDevice)
+
+            viewModel.connectToDevice(bluetoothDevice)
         },
         onFilter,
         modifier = modifier
@@ -68,13 +73,13 @@ fun BluetoothScreen(
     OnLifecycleEvent { owner, event ->
         when (event) {
             Lifecycle.Event.ON_RESUME -> {
-                BluetoothHelper.disconnectFromBluetoothDevice()
-                BluetoothHelper.registerReceiver()
-                BluetoothHelper.provideBluetoothOperation()
+                viewModel.disconnectFromDevice()
+                viewModel.registerReceiver()
+                viewModel.startScanIfHasPermissions()
             }
 
             Lifecycle.Event.ON_PAUSE -> {
-                BluetoothHelper.unregisterReceiver()
+                viewModel.unregisterReceiver()
             }
 
             else -> {}

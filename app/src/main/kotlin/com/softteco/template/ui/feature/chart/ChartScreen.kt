@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -20,11 +21,11 @@ import com.softteco.template.Constants.CHARTS_STEP_VALUE
 import com.softteco.template.Constants.SPACE_STRING
 import com.softteco.template.MainActivity
 import com.softteco.template.R
+import com.softteco.template.data.bluetooth.entity.BluetoothDeviceData
 import com.softteco.template.ui.components.CustomTopAppBar
 import com.softteco.template.ui.theme.Dimens
 import com.softteco.template.ui.theme.Dimens.PaddingDefault
 import com.softteco.template.ui.theme.Dimens.PaddingExtraLarge
-import com.softteco.template.utils.BluetoothHelper
 import com.softteco.template.utils.generateRandomColor
 import lecho.lib.hellocharts.model.Axis
 import lecho.lib.hellocharts.model.Line
@@ -48,8 +49,10 @@ fun ChartScreen(
     val state by viewModel.state.collectAsState()
     activity = LocalContext.current as MainActivity
 
-    BluetoothHelper.onDeviceResult = {
-        viewModel.provideDataLYWSD03MMC(it)
+    LaunchedEffect(Unit) {
+        viewModel.onDeviceResultCallback {
+            viewModel.bluetoothData(it)
+        }
     }
 
     ScreenContent(onBackClicked, LocalContext.current as MainActivity, state)
@@ -83,57 +86,67 @@ fun Charts(
     val tmpColor by remember { mutableIntStateOf(generateRandomColor()) }
     val humColor by remember { mutableIntStateOf(generateRandomColor()) }
 
-    Column(
-        modifier = modifier.padding(start = Dimens.PaddingDefault)
-    ) {
-        Text(
-            text = stringResource(R.string.temperature).plus(SPACE_STRING)
-                .plus(state.dataLYWSD03MMC.temperature.toString()).plus(SPACE_STRING)
-                .plus(stringResource(R.string.temperature_degrees))
-        )
-        Text(
-            text = stringResource(R.string.humidity).plus(SPACE_STRING)
-                .plus(state.dataLYWSD03MMC.humidity.toString()).plus(SPACE_STRING)
-                .plus(stringResource(R.string.humidity_percent))
-        )
-        Text(
-            text = stringResource(R.string.battery).plus(SPACE_STRING)
-                .plus(state.dataLYWSD03MMC.battery.toString()).plus(SPACE_STRING)
-                .plus(stringResource(R.string.battery_voltage))
-        )
-        AndroidView(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(top = PaddingExtraLarge, end = PaddingExtraLarge, bottom = PaddingDefault),
-            factory = {
-                lineChartView
+    when (state.dataFromBluetoothDevice) {
+        is BluetoothDeviceData.DataLYWSD03MMC -> {
+            state.dataFromBluetoothDevice.let {
+                Column(
+                    modifier = modifier.padding(start = Dimens.PaddingDefault)
+                ) {
+                    Text(
+                        text = stringResource(R.string.temperature).plus(SPACE_STRING)
+                            .plus(it.temperature.toString()).plus(SPACE_STRING)
+                            .plus(stringResource(R.string.temperature_degrees))
+                    )
+                    Text(
+                        text = stringResource(R.string.humidity).plus(SPACE_STRING)
+                            .plus(it.humidity.toString()).plus(SPACE_STRING)
+                            .plus(stringResource(R.string.humidity_percent))
+                    )
+                    Text(
+                        text = stringResource(R.string.battery).plus(SPACE_STRING)
+                            .plus(it.battery.toString()).plus(SPACE_STRING)
+                            .plus(stringResource(R.string.battery_voltage))
+                    )
+                    AndroidView(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(
+                                top = PaddingExtraLarge,
+                                end = PaddingExtraLarge,
+                                bottom = PaddingDefault
+                            ),
+                        factory = {
+                            lineChartView
+                        }
+                    )
+                }
+
+                tempValues.add(
+                    PointValue(temperatureIndex, it.temperature.toFloat()).setLabel(
+                        stringResource(R.string.temperature_point_label)
+                    )
+                )
+                humValues.add(
+                    PointValue(
+                        humidityIndex,
+                        it.humidity.toFloat()
+                    ).setLabel(stringResource(R.string.humidity_point_label))
+                )
+
+                temperatureIndex += CHARTS_STEP_VALUE
+                humidityIndex += CHARTS_STEP_VALUE
+
+                lines.add(Line(tempValues).setColor(tmpColor).setHasLabels(true))
+                lines.add(Line(humValues).setColor(humColor).setHasLabels(true))
+
+                data.axisYLeft = Axis()
+                data.axisXBottom = Axis()
+                data.lines = lines
+
+                lineChartView.lineChartData = data
             }
-        )
-    }
+        }
 
-    state.dataLYWSD03MMC.let {
-        tempValues.add(
-            PointValue(temperatureIndex, it.temperature.toFloat()).setLabel(
-                stringResource(R.string.temperature_point_label)
-            )
-        )
-        humValues.add(
-            PointValue(
-                humidityIndex,
-                it.humidity.toFloat()
-            ).setLabel(stringResource(R.string.humidity_point_label))
-        )
-
-        temperatureIndex += CHARTS_STEP_VALUE
-        humidityIndex += CHARTS_STEP_VALUE
-
-        lines.add(Line(tempValues).setColor(tmpColor).setHasLabels(true))
-        lines.add(Line(humValues).setColor(humColor).setHasLabels(true))
-
-        data.axisYLeft = Axis()
-        data.axisXBottom = Axis()
-        data.lines = lines
-
-        lineChartView.lineChartData = data
+        else -> {}
     }
 }

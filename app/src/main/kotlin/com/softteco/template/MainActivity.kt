@@ -13,13 +13,13 @@ import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import com.softteco.template.data.base.error.Result
+import com.softteco.template.data.bluetooth.BluetoothHelper
 import com.softteco.template.data.profile.ProfileRepository
 import com.softteco.template.navigation.Graph
 import com.softteco.template.ui.AppContent
 import com.softteco.template.ui.feature.settings.PreferencesKeys
 import com.softteco.template.ui.theme.AppTheme
 import com.softteco.template.ui.theme.ThemeMode
-import com.softteco.template.utils.BluetoothHelper
 import com.softteco.template.utils.getFromDataStore
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
@@ -32,13 +32,16 @@ class MainActivity : ComponentActivity() {
     lateinit var profileRepository: ProfileRepository
 
     @Inject
+    lateinit var bluetoothHelper: BluetoothHelper
+
+    @Inject
     @Named("themeMode")
     lateinit var dataStore: DataStore<Preferences>
 
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
-        BluetoothHelper.initBluetoothHelper(this)
+        bluetoothHelper.init(this)
         setContent {
             val theme = dataStore.getFromDataStore(
                 PreferencesKeys.THEME_MODE,
@@ -55,5 +58,10 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        bluetoothHelper.drop()
     }
 }

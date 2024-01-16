@@ -24,6 +24,7 @@ import com.softteco.template.data.bluetooth.BluetoothHelper
 import com.softteco.template.data.bluetooth.BluetoothPermissionChecker
 import com.softteco.template.data.bluetooth.BluetoothState
 import com.softteco.template.data.bluetooth.entity.BluetoothDeviceData
+import com.softteco.template.data.bluetooth.entity.BluetoothDeviceType
 import no.nordicsemi.android.support.v18.scanner.BluetoothLeScannerCompat
 import no.nordicsemi.android.support.v18.scanner.ScanCallback
 import no.nordicsemi.android.support.v18.scanner.ScanResult

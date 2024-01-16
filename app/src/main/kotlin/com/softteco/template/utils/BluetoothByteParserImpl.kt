@@ -3,8 +3,8 @@ package com.softteco.template.utils
 import com.softteco.template.Constants
 import com.softteco.template.Constants.BIT_SHIFT_VALUE
 import com.softteco.template.data.bluetooth.BluetoothByteParser
+import com.softteco.template.data.bluetooth.entity.BluetoothDeviceData
 import com.softteco.template.data.bluetooth.entity.BluetoothDeviceType
-import com.softteco.template.data.bluetooth.entity.DataLYWSD03MMC
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -14,7 +14,7 @@ internal class BluetoothByteParserImpl @Inject constructor() : BluetoothBytePars
     override fun parseBytes(bytes: ByteArray, bluetoothDeviceType: BluetoothDeviceType): Any {
         return when (bluetoothDeviceType) {
             BluetoothDeviceType.LYWSD03MMC -> {
-                DataLYWSD03MMC(
+                BluetoothDeviceData.DataLYWSD03MMC(
                     characteristicByteConversation(
                         bytes,
                         Constants.START_INDEX_OF_TEMPERATURE,
@@ -30,7 +30,7 @@ internal class BluetoothByteParserImpl @Inject constructor() : BluetoothBytePars
             }
 
             BluetoothDeviceType.OTHER -> {
-                DataLYWSD03MMC() // Change to any new devices
+                BluetoothDeviceData.DataLYWSD03MMC() // Change to any new devices
             }
         }
     }

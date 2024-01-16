@@ -72,6 +72,8 @@
     <string name="dark">Dark</string>
     <string name="light">Light</string>
     <string name="mail_error">No email app is available on your device</string>
+    <string name="title_privacy_policy">For further details on how your data is used and stored, please see our\u0020</string>
+    <string name="privacy_policy">Privacy Policy</string>
 
     <!-- Bluetooth screen -->
     <string name="bluetooth_icon_description">Baseline_bluetooth_24</string>

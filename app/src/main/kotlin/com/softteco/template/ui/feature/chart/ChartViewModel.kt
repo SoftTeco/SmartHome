@@ -1,6 +1,5 @@
 package com.softteco.template.ui.feature.chart
 
-import android.annotation.SuppressLint
 import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -42,7 +41,6 @@ class ChartViewModel @Inject constructor(
         bluetoothHelper.onDeviceResultCallback(onDeviceResult)
     }
 
-    @SuppressLint("MissingPermission")
     fun bluetoothData(bluetoothDeviceData: BluetoothDeviceData) {
         viewModelScope.launch {
             dataFromBluetoothDevice.value = bluetoothDeviceData

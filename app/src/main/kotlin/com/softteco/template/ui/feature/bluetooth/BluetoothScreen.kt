@@ -1,6 +1,5 @@
 package com.softteco.template.ui.feature.bluetooth
 
-import android.annotation.SuppressLint
 import android.bluetooth.BluetoothDevice
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
@@ -33,9 +32,9 @@ import com.softteco.template.R
 import com.softteco.template.ui.components.CustomTopAppBar
 import com.softteco.template.ui.components.OnLifecycleEvent
 import com.softteco.template.ui.theme.Dimens
+import com.softteco.template.utils.getBluetoothDeviceName
 import kotlinx.coroutines.launch
 
-@SuppressLint("MissingPermission")
 @Composable
 fun BluetoothScreen(
     onConnect: () -> Unit,
@@ -153,7 +152,6 @@ fun BluetoothDevicesList(
     }
 }
 
-@SuppressLint("MissingPermission")
 @Composable
 fun BluetoothDeviceCard(
     bluetoothDevice: BluetoothDevice,
@@ -179,7 +177,7 @@ fun BluetoothDeviceCard(
             )
             Column(Modifier.weight(1F)) {
                 Text(
-                    text = bluetoothDevice.name,
+                    text = getBluetoothDeviceName(bluetoothDevice),
                     overflow = TextOverflow.Ellipsis,
                     maxLines = 1
                 )

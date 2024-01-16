@@ -26,6 +26,7 @@ import com.softteco.template.Constants.START_INDEX_OF_BATTERY
 import com.softteco.template.Constants.START_INDEX_OF_TEMPERATURE
 import com.softteco.template.MainActivity
 import com.softteco.template.data.bluetooth.BluetoothHelper
+import com.softteco.template.data.bluetooth.BluetoothPermissionChecker
 import com.softteco.template.data.bluetooth.BluetoothState
 import com.softteco.template.data.bluetooth.entity.BluetoothDeviceData
 import no.nordicsemi.android.support.v18.scanner.BluetoothLeScannerCompat
@@ -36,8 +37,11 @@ import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 
+@SuppressLint("MissingPermission")
 @Singleton
-internal class BluetoothHelperImpl @Inject constructor() : BluetoothHelper, BluetoothState {
+internal class BluetoothHelperImpl @Inject constructor(
+    private val bluetoothPermissionChecker: BluetoothPermissionChecker
+) : BluetoothHelper, BluetoothState {
 
     private var activity: MainActivity? = null
     private lateinit var bluetoothReceiver: BroadcastReceiver
@@ -53,7 +57,6 @@ internal class BluetoothHelperImpl @Inject constructor() : BluetoothHelper, Blue
     override var onDeviceResult: ((bluetoothDeviceData: BluetoothDeviceData) -> Unit)? = null
 
     private val scanCallback: ScanCallback = object : ScanCallback() {
-        @SuppressLint("MissingPermission")
         override fun onScanResult(
             callbackType: Int,
             scanResult: ScanResult
@@ -65,7 +68,6 @@ internal class BluetoothHelperImpl @Inject constructor() : BluetoothHelper, Blue
         }
     }
 
-    @SuppressLint("MissingPermission")
     override fun init(activity: MainActivity) {
         this.activity = activity
         resultBluetoothEnableLauncher =
@@ -127,7 +129,6 @@ internal class BluetoothHelperImpl @Inject constructor() : BluetoothHelper, Blue
     }
 
     private val mGattCallback: BluetoothGattCallback = object : BluetoothGattCallback() {
-        @SuppressLint("MissingPermission")
         override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
             if (newState == BluetoothProfile.STATE_CONNECTED) {
                 localGatt = gatt
@@ -136,7 +137,6 @@ internal class BluetoothHelperImpl @Inject constructor() : BluetoothHelper, Blue
             }
         }
 
-        @SuppressLint("MissingPermission")
         override fun onServicesDiscovered(gatt: BluetoothGatt?, status: Int) {
             super.onServicesDiscovered(gatt, status)
             if (status == BluetoothGatt.GATT_SUCCESS) {
@@ -150,7 +150,6 @@ internal class BluetoothHelperImpl @Inject constructor() : BluetoothHelper, Blue
             }
         }
 
-        @SuppressLint("MissingPermission")
         fun setCharacteristicNotification(
             bluetoothGatt: BluetoothGatt,
             characteristic: BluetoothGattCharacteristic,
@@ -175,7 +174,6 @@ internal class BluetoothHelperImpl @Inject constructor() : BluetoothHelper, Blue
             gatt: BluetoothGatt,
             characteristic: BluetoothGattCharacteristic
         ) {
-
             characteristic.value.let {
                 val temp = characteristicByteConversation(
                     it,
@@ -200,7 +198,6 @@ internal class BluetoothHelperImpl @Inject constructor() : BluetoothHelper, Blue
         }
     }
 
-    @SuppressLint("MissingPermission")
     override fun connectToDevice(bluetoothDevice: BluetoothDevice) {
         bluetoothDevice.connectGatt(
             activity?.applicationContext,
@@ -210,7 +207,6 @@ internal class BluetoothHelperImpl @Inject constructor() : BluetoothHelper, Blue
         )
     }
 
-    @SuppressLint("MissingPermission")
     override fun disconnectFromDevice() {
         localGatt?.disconnect()
         localGatt?.close()
@@ -218,11 +214,11 @@ internal class BluetoothHelperImpl @Inject constructor() : BluetoothHelper, Blue
 
     override fun startScanIfHasPermissions() {
         activity?.let {
-            if (BluetoothPermissionChecker.checkBluetoothSupport(bluetoothAdapter, it) &&
-                BluetoothPermissionChecker.hasPermissions(it)
+            if (bluetoothPermissionChecker.checkBluetoothSupport(bluetoothAdapter, it) &&
+                bluetoothPermissionChecker.hasPermissions(it)
             ) {
                 when (
-                    BluetoothPermissionChecker.checkEnableDeviceModules(
+                    bluetoothPermissionChecker.checkEnableDeviceModules(
                         bluetoothAdapter,
                         locationManager
                     )

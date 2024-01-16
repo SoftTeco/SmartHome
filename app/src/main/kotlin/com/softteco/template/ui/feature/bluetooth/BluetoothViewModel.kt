@@ -1,12 +1,12 @@
 package com.softteco.template.ui.feature.bluetooth
 
-import android.annotation.SuppressLint
 import android.bluetooth.BluetoothDevice
 import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.softteco.template.data.bluetooth.BluetoothHelper
 import com.softteco.template.ui.components.SnackBarState
+import com.softteco.template.utils.getBluetoothDeviceName
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -46,7 +46,6 @@ class BluetoothViewModel @Inject constructor(
         State()
     )
 
-    @SuppressLint("MissingPermission")
     fun addScanResult(scanResult: ScanResult) {
         viewModelScope.launch(Dispatchers.IO) {
             mutex.withLock {
@@ -88,15 +87,13 @@ class BluetoothViewModel @Inject constructor(
         emitDevices()
     }
 
-    @SuppressLint("MissingPermission")
     private fun emitDevices() {
         _devices.value =
             _bluetoothDevices.toList().asReversed().map { it.second.device }.let { devices ->
-                if (filtered) devices.filter { it.name == filteredName } else devices
+                if (filtered) devices.filter { getBluetoothDeviceName(it) == filteredName } else devices
             }
     }
 
-    @SuppressLint("MissingPermission")
     private fun addDevice(scanResult: ScanResult) {
         _bluetoothDevices[scanResult.device.address] = scanResult
         emitDevices()

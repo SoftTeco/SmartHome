@@ -63,7 +63,6 @@ fun BluetoothScreen(
     ScreenContent(
         state = state,
         onItemClicked = { bluetoothDevice ->
-
             viewModel.connectToDevice(bluetoothDevice)
         },
         onFilter,

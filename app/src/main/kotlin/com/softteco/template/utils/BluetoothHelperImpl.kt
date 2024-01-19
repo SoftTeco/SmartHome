@@ -18,17 +18,13 @@ import android.provider.Settings
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import com.softteco.template.BuildConfig
-import com.softteco.template.Constants.DIVISION_VALUE_OF_VALUES
-import com.softteco.template.Constants.END_INDEX_OF_BATTERY
-import com.softteco.template.Constants.END_INDEX_OF_TEMPERATURE
-import com.softteco.template.Constants.INDEX_OF_HUMIDITY
-import com.softteco.template.Constants.START_INDEX_OF_BATTERY
-import com.softteco.template.Constants.START_INDEX_OF_TEMPERATURE
 import com.softteco.template.MainActivity
+import com.softteco.template.data.bluetooth.BluetoothByteParser
 import com.softteco.template.data.bluetooth.BluetoothHelper
 import com.softteco.template.data.bluetooth.BluetoothPermissionChecker
 import com.softteco.template.data.bluetooth.BluetoothState
 import com.softteco.template.data.bluetooth.entity.BluetoothDeviceData
+import com.softteco.template.data.bluetooth.entity.BluetoothDeviceType
 import no.nordicsemi.android.support.v18.scanner.BluetoothLeScannerCompat
 import no.nordicsemi.android.support.v18.scanner.ScanCallback
 import no.nordicsemi.android.support.v18.scanner.ScanResult
@@ -40,7 +36,8 @@ import javax.inject.Singleton
 @SuppressLint("MissingPermission")
 @Singleton
 internal class BluetoothHelperImpl @Inject constructor(
-    private val bluetoothPermissionChecker: BluetoothPermissionChecker
+    private val bluetoothPermissionChecker: BluetoothPermissionChecker,
+    private val bluetoothByteParser: BluetoothByteParser
 ) : BluetoothHelper, BluetoothState {
 
     private var activity: MainActivity? = null
@@ -110,7 +107,6 @@ internal class BluetoothHelperImpl @Inject constructor(
         )
     }
 
-    @Suppress("TooGenericExceptionCaught")
     override fun unregisterReceiver() {
         try {
             activity?.unregisterReceiver(bluetoothReceiver)
@@ -175,24 +171,11 @@ internal class BluetoothHelperImpl @Inject constructor(
             characteristic: BluetoothGattCharacteristic
         ) {
             characteristic.value.let {
-                val temp = characteristicByteConversation(
-                    it,
-                    START_INDEX_OF_TEMPERATURE,
-                    END_INDEX_OF_TEMPERATURE
-                ) / DIVISION_VALUE_OF_VALUES
-                val hum = it[INDEX_OF_HUMIDITY].toInt()
-                val bat = characteristicByteConversation(
-                    it,
-                    START_INDEX_OF_BATTERY,
-                    END_INDEX_OF_BATTERY
-                )
-
                 onDeviceResult?.invoke(
-                    BluetoothDeviceData.DataLYWSD03MMC(
-                        temp,
-                        hum,
-                        bat
-                    )
+                    bluetoothByteParser.parseBytes(
+                        it,
+                        BluetoothDeviceType.LYWSD03MMC
+                    ) as BluetoothDeviceData.DataLYWSD03MMC
                 )
             }
         }

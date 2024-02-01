@@ -1,8 +1,10 @@
 package com.softteco.template
 
+import android.annotation.SuppressLint
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -20,10 +22,9 @@ import com.softteco.template.ui.AppContent
 import com.softteco.template.ui.feature.settings.PreferencesKeys
 import com.softteco.template.ui.theme.AppTheme
 import com.softteco.template.ui.theme.ThemeMode
-import com.softteco.template.utils.getFromDataStore
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.flow.map
 import javax.inject.Inject
-import javax.inject.Named
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -35,20 +36,19 @@ class MainActivity : ComponentActivity() {
     lateinit var bluetoothHelper: BluetoothHelper
 
     @Inject
-    @Named("themeMode")
     lateinit var dataStore: DataStore<Preferences>
 
+    @SuppressLint("FlowOperatorInvokedInComposition")
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
         bluetoothHelper.init(this)
         setContent {
-            val theme = dataStore.getFromDataStore(
-                PreferencesKeys.THEME_MODE,
-                ThemeMode.SystemDefault.value
-            ).collectAsState(initial = ThemeMode.SystemDefault.value)
-            AppTheme(themeMode = theme.value) {
-                var isUserLoggedIn by rememberSaveable { (mutableStateOf<Boolean?>(null)) }
+            val theme = dataStore.data.map {
+                it[PreferencesKeys.THEME_MODE]
+            }.collectAsState(initial = ThemeMode.SystemDefault.value)
+            val appThemeContent: @Composable () -> Unit = {
+                var isUserLoggedIn by rememberSaveable { mutableStateOf<Boolean?>(null) }
                 LaunchedEffect(Unit) {
                     isUserLoggedIn = profileRepository.getUser() is Result.Success
                 }
@@ -57,6 +57,9 @@ class MainActivity : ComponentActivity() {
                     AppContent(startDestination)
                 }
             }
+            theme.value?.let {
+                AppTheme(themeMode = it, content = appThemeContent)
+            } ?: AppTheme(themeMode = ThemeMode.SystemDefault.value, content = appThemeContent)
         }
     }
 

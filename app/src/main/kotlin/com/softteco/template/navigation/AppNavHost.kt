@@ -18,6 +18,7 @@ import com.softteco.template.ui.feature.bluetooth.BluetoothScreen
 import com.softteco.template.ui.feature.chart.ChartScreen
 import com.softteco.template.ui.feature.forgotPassword.ForgotPasswordScreen
 import com.softteco.template.ui.feature.login.LoginScreen
+import com.softteco.template.ui.feature.openSourceLicenses.OpenSourceLicensesScreen
 import com.softteco.template.ui.feature.profile.ProfileScreen
 import com.softteco.template.ui.feature.resetPassword.ResetPasswordScreen
 import com.softteco.template.ui.feature.settings.SettingsScreen
@@ -43,6 +44,7 @@ fun AppNavHost(
     ) {
         bottomBarGraph(navController, Modifier.padding(paddingValues = paddingValues))
         loginGraph(navController)
+        settingsGraph(navController)
         bluetoothGraph(navController)
     }
 }
@@ -78,7 +80,10 @@ fun NavGraphBuilder.bottomBarGraph(
         composable(Screen.Settings.route) {
             SettingsScreen(
                 modifier = modifier,
-                onBackClicked = { navController.navigateUp() }
+                onBackClicked = { navController.navigateUp() },
+                onLicensesClicked = {
+                    navController.navigate(Screen.OpenSourceLicenses.route)
+                }
             )
         }
     }
@@ -124,6 +129,17 @@ fun NavGraphBuilder.loginGraph(navController: NavController) {
                 onBackClicked = { navController.navigateUp() },
                 onSuccess = { navController.navigate(Screen.Login.route) }
             )
+        }
+    }
+}
+
+fun NavGraphBuilder.settingsGraph(navController: NavController) {
+    navigation(
+        startDestination = Screen.Settings.route,
+        route = Graph.Settings.route,
+    ) {
+        composable(Screen.OpenSourceLicenses.route) {
+            OpenSourceLicensesScreen(onBackClicked = { navController.navigateUp() })
         }
     }
 }

@@ -7,6 +7,7 @@ object Constants {
     const val SPACE_STRING = " "
     const val CONTACT_EMAIL = "softteco.os.dev@gmail.com"
     const val CONTACT_SUBJECT = "User Inquiry or Feedback"
+    const val TERMS_OF_SERVICES_URL = "https://softteco.com/terms-of-services"
     const val ALPHA_COLOR_VALUE = 255
     const val BOUND_COLOR_VALUE = 256
     const val CHARTS_STEP_VALUE = 1.0F

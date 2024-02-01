@@ -2,6 +2,8 @@ import com.android.build.gradle.internal.cxx.configure.gradleLocalProperties
 
 plugins {
     id("com.android.application")
+    id("com.google.gms.google-services") version "4.4.0"
+    id("com.google.android.gms.oss-licenses-plugin")
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.hilt.android)
     alias(libs.plugins.kotlin.kapt)
@@ -66,6 +68,7 @@ android {
             )
             isDebuggable = false
             buildConfigField("String", "BASE_URL", baseUrl)
+            buildConfigField("String", "GOOGLE_SERVICES_JSON", "\"{}\"")
             buildConfigField("String", "BLUETOOTH_SERVICE_UUID_VALUE", bluetoothServiceUUID)
             buildConfigField(
                 "String",
@@ -115,6 +118,7 @@ android {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
+    @Suppress("UnstableApiUsage")
     testOptions {
         packaging {
             jniLibs { useLegacyPackaging = true }
@@ -135,10 +139,13 @@ dependencies {
 
     implementation(libs.hilt.android)
     implementation(libs.androidx.browser)
+    implementation(platform(libs.androidx.compose.bom))
+    implementation(libs.accompanist.permissions)
     kapt(libs.hilt.android.compiler)
     implementation(libs.hilt.navigation.compose)
 
-    implementation(platform(libs.androidx.compose.bom))
+    implementation(platform(libs.google.firebase.bom))
+    implementation(libs.google.firebase.messaging)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.compose.ui)
@@ -168,6 +175,9 @@ dependencies {
     implementation(libs.timber)
     implementation(libs.kotlinx.serialization.converter)
     implementation(libs.kotlin.reflect)
+
+    implementation(libs.androidx.appcompat)
+    implementation(libs.play.services.oss.licenses)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.test.ext.junit)
@@ -204,4 +214,18 @@ tasks.register("jacocoTestReport", JacocoReport::class) {
         xml.required.set(true)
         html.required.set(true)
     }
+}
+
+tasks.register("createGoogleServicesJson") {
+    val isAppCenterBuild = System.getenv("APP_CENTER_BUILD")?.toBoolean() ?: false
+    println("isAppCenterBuild: $isAppCenterBuild")
+    if (isAppCenterBuild) {
+        val jsonString = System.getenv("GOOGLE_SERVICES_JSON").replace("\\", "")
+        val outputFile = file("google-services.json")
+        outputFile.writeText(jsonString)
+    }
+}
+
+tasks.preBuild {
+    dependsOn("createGoogleServicesJson")
 }

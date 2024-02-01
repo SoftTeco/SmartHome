@@ -74,7 +74,18 @@
     <string name="mail_error">No email app is available on your device</string>
     <string name="title_privacy_policy">For further details on how your data is used and stored, please see our\u0020</string>
     <string name="privacy_policy">Privacy Policy</string>
+    <string name="open_source_licenses">Open Source Licenses</string>
+    <string name="no_open_source_licenses">No open source licenses found</string>
 
+    <!-- FCM -->
+    <string name="default_notification_channel_id" translatable="false">fcm_default_channel</string>
+    <string name="notification_permission_title">Notification permission</string>
+    <string name="notification_permission_description">The notification permission is important for this app. Please grant the permission.</string>
+    <string name="request_notification_permission">Request permission</string>
+
+    <!-- Sign up screen -->
+    <string name="accept_terms_conditions">I have read and accept the\u0020</string>
+    <string name="terms_conditions">Terms &amp; Conditions</string>
     <!-- Bluetooth screen -->
     <string name="bluetooth_icon_description">Baseline_bluetooth_24</string>
     <string name="signal_level_icon_description">Baseline_signal_level_24</string>

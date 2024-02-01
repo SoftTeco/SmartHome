@@ -6,7 +6,8 @@ minSdk = "26"
 # @keep
 targetSdk = "34"
 
-applicationPlugin = "8.1.0"
+applicationPlugin = "8.1.1"
+ossLicensesPlugin = "0.10.6"
 kotlinAndroidPlugin = "1.9.20"
 ktlinPlugin = "10.2.1"
 detektPlugin = "1.22.0"
@@ -44,11 +45,14 @@ iconCompose = "1.5.4"
 dataStore = "1.0.0"
 coil = "2.2.2"
 signaturePad = "0.1.2"
-kotlinxSerializationGson = "1.6.0"
+kotlinxSerializationGson = "1.6.2"
 timber = "5.0.1"
 browser = "1.7.0"
 kotlinxSerializationConverter = "1.0.0"
 kotlinReflect = "1.9.21"
+firebaseBom = "32.6.0"
+accompanist = "0.30.1"
+playServicesOssLicenses = "17.0.1"
 nordicSemiScanner = "1.6.0"
 hellocharts = "1.5.8"
 
@@ -78,14 +82,15 @@ androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref =
 androidx-room-ktx = { module = "androidx.room:room-ktx", version.ref = "room" }
 androidx-compose-icons = { module = "androidx.compose.material:material-icons-extended", version.ref = "iconCompose" }
 preferences-data-store = { module = "androidx.datastore:datastore-preferences", version.ref = "dataStore" }
-io-coil-kt-coil-svg = { module = "io.coil-kt:coil-svg" , version.ref = "coil" }
-io-coil-kt-coil-compose = { module = "io.coil-kt:coil-compose" , version.ref = "coil" }
+io-coil-kt-coil-svg = { module = "io.coil-kt:coil-svg", version.ref = "coil" }
+io-coil-kt-coil-compose = { module = "io.coil-kt:coil-compose", version.ref = "coil" }
 signature-pad-compose = { module = "se.warting.signature:signature-pad", version.ref = "signaturePad" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerializationGson" }
 timber = { module = "com.jakewharton.timber:timber", version.ref = "timber" }
 androidx-browser = { module = "androidx.browser:browser", version.ref = "browser" }
 kotlinx-serialization-converter = { module = "com.jakewharton.retrofit:retrofit2-kotlinx-serialization-converter", version.ref = "kotlinxSerializationConverter" }
 kotlin-reflect = { module = "org.jetbrains.kotlin:kotlin-reflect", version.ref = "kotlinReflect" }
+play-services-oss-licenses = { module = "com.google.android.gms:play-services-oss-licenses", version.ref = "playServicesOssLicenses" }
 nordicSemiScanner = { module = "no.nordicsemi.android.support.v18:scanner", version.ref = "nordicSemiScanner" }
 hellocharts = { module = "com.github.lecho:hellocharts-android", version.ref = "hellocharts" }
 
@@ -103,7 +108,9 @@ io-mockk-mockk-android = { module = "io.mockk:mockk-android", version.ref = "moc
 io-mockk-mockk-agent = { module = "io.mockk:mockk-agent", version.ref = "mockk" }
 app-cash-turbine = { module = "app.cash.turbine:turbine", version.ref = "turbine" }
 io-kotest-kotest-assertions = { module = "io.kotest:kotest-assertions-core", version.ref = "kotest" }
-
+google-firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebaseBom" }
+google-firebase-messaging = { module = "com.google.firebase:firebase-messaging-ktx" }
+accompanist-permissions = { module = "com.google.accompanist:accompanist-permissions", version.ref = "accompanist" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "applicationPlugin" }

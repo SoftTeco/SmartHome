@@ -35,7 +35,7 @@ internal class BluetoothPermissionCheckerImpl @Inject constructor() : BluetoothP
         bluetoothAdapter: BluetoothAdapter?,
         activity: MainActivity
     ) = bluetoothAdapter != null &&
-            activity.packageManager?.hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE) == true
+        activity.packageManager?.hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE) == true
 
     override fun checkEnableDeviceModules(
         bluetoothAdapter: BluetoothAdapter?,

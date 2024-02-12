@@ -21,8 +21,6 @@
     <string name="go_to_login">Go to Log in screen</string>
     <string name="send">Send</string>
     <string name="receive">Receive</string>
-    <string name="connect">Connect</string>
-    <string name="disconnect">disconnect</string>
     <string name="visibility">visibility</string>
     <string name="reset_password">Reset password</string>
     <string name="enter_new_password">Please, enter new password</string>
@@ -86,11 +84,14 @@
     <!-- Sign up screen -->
     <string name="accept_terms_conditions">I have read and accept the\u0020</string>
     <string name="terms_conditions">Terms &amp; Conditions</string>
+
     <!-- Bluetooth screen -->
     <string name="bluetooth_icon_description">Baseline_bluetooth_24</string>
     <string name="signal_level_icon_description">Baseline_signal_level_24</string>
     <string name="device_name">LYWSD03MMC</string>
     <string name="show_only_thermometers">Show only thermometers</string>
+    <string name="connect">Connect</string>
+    <string name="disconnect">Disconnect</string>
 
     <!-- Chart screen -->
     <string name="temperature">Temperature:</string>

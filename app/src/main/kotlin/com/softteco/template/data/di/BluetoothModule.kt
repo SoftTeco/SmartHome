@@ -3,9 +3,9 @@ package com.softteco.template.data.di
 import com.softteco.template.data.bluetooth.BluetoothByteParser
 import com.softteco.template.data.bluetooth.BluetoothHelper
 import com.softteco.template.data.bluetooth.BluetoothPermissionChecker
-import com.softteco.template.utils.BluetoothByteParserImpl
 import com.softteco.template.utils.BluetoothHelperImpl
 import com.softteco.template.utils.BluetoothPermissionCheckerImpl
+import com.softteco.template.utils.bluetooth.BluetoothByteParserImpl
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn

@@ -141,7 +141,6 @@ internal class BluetoothHelperImpl @Inject constructor(
     private val mGattCallback: BluetoothGattCallback = object : BluetoothGattCallback() {
         override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
             if (newState == BluetoothProfile.STATE_CONNECTED) {
-                println("LYW Connected")
                 gatt.let {
                     connectedDevicesList[it.device.address] = it
                     deviceConnectionStatusList[it.device.address]?.isConnected = true
@@ -151,7 +150,6 @@ internal class BluetoothHelperImpl @Inject constructor(
             }
 
             if (newState == BluetoothProfile.STATE_DISCONNECTED) {
-                println("LYW Disconnected")
                 gatt.let {
                     deviceConnectionStatusList[it.device.address]?.isConnected = false
                     it.close()

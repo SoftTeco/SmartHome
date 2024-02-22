@@ -4,7 +4,6 @@ import com.softteco.template.Constants
 import com.softteco.template.data.bluetooth.BluetoothByteParser
 import com.softteco.template.data.bluetooth.entity.BluetoothDeviceData
 import com.softteco.template.data.bluetooth.entity.BluetoothDeviceType
-import com.softteco.template.utils.characteristicByteConversation
 import javax.inject.Inject
 import javax.inject.Singleton
 

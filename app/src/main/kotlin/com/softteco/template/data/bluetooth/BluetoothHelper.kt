@@ -1,7 +1,9 @@
 package com.softteco.template.data.bluetooth
 
 import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothGatt
 import com.softteco.template.MainActivity
+import com.softteco.template.data.bluetooth.entity.BluetoothDeviceConnectionStatus
 import com.softteco.template.data.bluetooth.entity.BluetoothDeviceData
 import no.nordicsemi.android.support.v18.scanner.ScanResult
 
@@ -20,12 +22,12 @@ interface BluetoothHelper {
     /**
      * Connecting to the Bluetooth device.
      */
-    fun connectToDevice(bluetoothDevice: BluetoothDevice)
+    fun provideConnectionToDevice(bluetoothDevice: BluetoothDevice)
 
     /**
      * Disconnecting from the Bluetooth device.
      */
-    fun disconnectFromDevice()
+    fun disconnectFromDevice(bluetoothGatt: BluetoothGatt?)
 
     /**
      * Register the receiver to track the events of turning the Bluetooth adapter on and off in
@@ -64,4 +66,6 @@ interface BluetoothHelper {
      * Callback to receive data from the Bluetooth device.
      */
     fun onDeviceResultCallback(onDeviceResult: (bluetoothDeviceData: BluetoothDeviceData) -> Unit)
+
+    fun getDeviceConnectionStatusList(): HashMap<String, BluetoothDeviceConnectionStatus>
 }

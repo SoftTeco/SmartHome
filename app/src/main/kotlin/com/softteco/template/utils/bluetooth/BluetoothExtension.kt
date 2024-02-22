@@ -1,4 +1,4 @@
-package com.softteco.template.utils
+package com.softteco.template.utils.bluetooth
 
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothDevice

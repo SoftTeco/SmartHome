@@ -1,4 +1,4 @@
-package com.softteco.template.utils
+package com.softteco.template.utils.bluetooth
 
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
@@ -23,6 +23,7 @@ import com.softteco.template.data.bluetooth.BluetoothByteParser
 import com.softteco.template.data.bluetooth.BluetoothHelper
 import com.softteco.template.data.bluetooth.BluetoothPermissionChecker
 import com.softteco.template.data.bluetooth.BluetoothState
+import com.softteco.template.data.bluetooth.entity.BluetoothDeviceConnectionStatus
 import com.softteco.template.data.bluetooth.entity.BluetoothDeviceData
 import com.softteco.template.data.bluetooth.entity.BluetoothDeviceType
 import no.nordicsemi.android.support.v18.scanner.BluetoothLeScannerCompat
@@ -45,13 +46,14 @@ internal class BluetoothHelperImpl @Inject constructor(
     private lateinit var bluetoothManager: BluetoothManager
     private lateinit var bluetoothAdapter: BluetoothAdapter
     private lateinit var locationManager: LocationManager
-    private var localGatt: BluetoothGatt? = null
     private var resultBluetoothEnableLauncher: ActivityResultLauncher<Intent>? = null
     private var resultLocationEnableLauncher: ActivityResultLauncher<Intent>? = null
     override var onConnect: (() -> Unit)? = null
     override var onDisconnect: (() -> Unit)? = null
     override var onScanResult: ((scanResult: ScanResult) -> Unit)? = null
     override var onDeviceResult: ((bluetoothDeviceData: BluetoothDeviceData) -> Unit)? = null
+    private var deviceConnectionStatusList = hashMapOf<String, BluetoothDeviceConnectionStatus>()
+    private var connectedDevicesList = hashMapOf<String, BluetoothGatt>()
 
     private val scanCallback: ScanCallback = object : ScanCallback() {
         override fun onScanResult(
@@ -60,6 +62,15 @@ internal class BluetoothHelperImpl @Inject constructor(
         ) {
             super.onScanResult(callbackType, scanResult)
             scanResult.device.name?.let {
+                deviceConnectionStatusList[scanResult.device.address] =
+                    BluetoothDeviceConnectionStatus(
+                        com.softteco.template.data.bluetooth.entity.BluetoothDevice(
+                            it,
+                            scanResult.device.address,
+                            scanResult.rssi,
+                            0L
+                        ), false
+                    )
                 onScanResult?.invoke(scanResult)
             }
         }
@@ -124,12 +135,28 @@ internal class BluetoothHelperImpl @Inject constructor(
         BluetoothLeScannerCompat.getScanner().stopScan(scanCallback)
     }
 
+    private fun checkConnectedDevice(bluetoothDevice: BluetoothDevice) =
+        deviceConnectionStatusList[bluetoothDevice.address]?.isConnected
+
     private val mGattCallback: BluetoothGattCallback = object : BluetoothGattCallback() {
         override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
             if (newState == BluetoothProfile.STATE_CONNECTED) {
-                localGatt = gatt
-                gatt.discoverServices()
-                onConnect?.invoke()
+                println("LYW Connected")
+                gatt.let {
+                    connectedDevicesList[it.device.address] = it
+                    deviceConnectionStatusList[it.device.address]?.isConnected = true
+                    it.discoverServices()
+                    onConnect?.invoke()
+                }
+            }
+
+            if (newState == BluetoothProfile.STATE_DISCONNECTED) {
+                println("LYW Disconnected")
+                gatt.let {
+                    deviceConnectionStatusList[it.device.address]?.isConnected = false
+                    it.close()
+                    onDisconnect?.invoke()
+                }
             }
         }
 
@@ -181,18 +208,21 @@ internal class BluetoothHelperImpl @Inject constructor(
         }
     }
 
-    override fun connectToDevice(bluetoothDevice: BluetoothDevice) {
-        bluetoothDevice.connectGatt(
-            activity?.applicationContext,
-            false,
-            mGattCallback,
-            BluetoothDevice.TRANSPORT_LE
-        )
+    override fun provideConnectionToDevice(bluetoothDevice: BluetoothDevice) {
+        if (checkConnectedDevice(bluetoothDevice) == true) {
+            disconnectFromDevice(connectedDevicesList[bluetoothDevice.address])
+        } else {
+            bluetoothDevice.connectGatt(
+                activity?.applicationContext,
+                false,
+                mGattCallback,
+                BluetoothDevice.TRANSPORT_LE
+            )
+        }
     }
 
-    override fun disconnectFromDevice() {
-        localGatt?.disconnect()
-        localGatt?.close()
+    override fun disconnectFromDevice(bluetoothGatt: BluetoothGatt?) {
+        bluetoothGatt?.disconnect()
     }
 
     override fun startScanIfHasPermissions() {
@@ -239,4 +269,6 @@ internal class BluetoothHelperImpl @Inject constructor(
     override fun onDeviceResultCallback(onDeviceResult: (bluetoothDeviceData: BluetoothDeviceData) -> Unit) {
         this.onDeviceResult = onDeviceResult
     }
+
+    override fun getDeviceConnectionStatusList() = deviceConnectionStatusList
 }

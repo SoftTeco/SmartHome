@@ -29,11 +29,12 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import com.softteco.template.R
+import com.softteco.template.data.bluetooth.entity.BluetoothDeviceConnectionStatus
 import com.softteco.template.ui.components.CustomTopAppBar
 import com.softteco.template.ui.components.OnLifecycleEvent
+import com.softteco.template.ui.components.PrimaryButton
 import com.softteco.template.ui.theme.Dimens
-import com.softteco.template.utils.getBluetoothDeviceName
-import kotlinx.coroutines.launch
+import com.softteco.template.utils.bluetooth.getBluetoothDeviceName
 
 @Composable
 fun BluetoothScreen(
@@ -48,12 +49,18 @@ fun BluetoothScreen(
     LaunchedEffect(Unit) {
         viewModel.filteredName = deviceName
         viewModel.onScanCallback {
+            viewModel.emitDeviceConnectionStatusList()
             viewModel.addScanResult(it)
         }
         viewModel.onConnectCallback {
-            scope.launch {
-                onConnect()
-            }
+            viewModel.emitDeviceConnectionStatusList()
+//            scope.launch {
+//                onConnect()
+//            }
+        }
+
+        viewModel.onDisconnectCallback {
+            viewModel.emitDeviceConnectionStatusList()
         }
     }
 
@@ -63,7 +70,7 @@ fun BluetoothScreen(
     ScreenContent(
         state = state,
         onItemClicked = { bluetoothDevice ->
-            viewModel.connectToDevice(bluetoothDevice)
+            viewModel.provideConnectionToDevice(bluetoothDevice)
         },
         onFilter,
         modifier = modifier
@@ -100,6 +107,7 @@ private fun ScreenContent(
         BluetoothDevicesSwitch(onFilter)
         BluetoothDevicesList(
             devices = state.devices,
+            devicesConnectionStatusList = state.devicesConnectionStatusList,
             onItemClicked = onItemClicked,
         )
     }
@@ -111,7 +119,6 @@ fun BluetoothDevicesSwitch(
     modifier: Modifier = Modifier
 ) {
     var checked by remember { mutableStateOf(true) }
-
     Row(
         modifier = modifier.padding(start = Dimens.PaddingDefault)
     ) {
@@ -136,16 +143,22 @@ fun BluetoothDevicesSwitch(
 @Composable
 fun BluetoothDevicesList(
     devices: List<BluetoothDevice>,
+    devicesConnectionStatusList: List<BluetoothDeviceConnectionStatus>,
     onItemClicked: (BluetoothDevice) -> Unit,
     modifier: Modifier = Modifier
 ) {
     LazyColumn(modifier = modifier.fillMaxSize()) {
         devices.forEach { device ->
             item {
-                BluetoothDeviceCard(
-                    bluetoothDevice = device,
-                    onItemClicked = onItemClicked
-                )
+                devicesConnectionStatusList.forEach {
+                    if (it.bluetoothDevice.macAddress == device.address) {
+                        BluetoothDeviceCard(
+                            bluetoothDevice = device,
+                            connectionStatus = it.isConnected,
+                            onItemClicked = onItemClicked
+                        )
+                    }
+                }
             }
         }
     }
@@ -154,6 +167,7 @@ fun BluetoothDevicesList(
 @Composable
 fun BluetoothDeviceCard(
     bluetoothDevice: BluetoothDevice,
+    connectionStatus: Boolean?,
     onItemClicked: (BluetoothDevice) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -164,9 +178,9 @@ fun BluetoothDeviceCard(
     ) {
         Row(
             modifier = Modifier
-                .clickable { onItemClicked(bluetoothDevice) }
+                .clickable { }
                 .padding(Dimens.PaddingSmall),
-            verticalAlignment = Alignment.CenterVertically,
+            verticalAlignment = Alignment.CenterVertically
         ) {
             Image(
                 painter = painterResource(R.drawable.baseline_bluetooth_24),
@@ -186,6 +200,16 @@ fun BluetoothDeviceCard(
                     maxLines = 1
                 )
             }
+            PrimaryButton(
+                buttonText = stringResource(
+                    id = if (connectionStatus == true) R.string.disconnect
+                    else R.string.connect
+                ),
+                loading = false,
+                modifier = Modifier.weight(1F),
+                enabled = true,
+                onClick = { onItemClicked(bluetoothDevice) },
+            )
         }
     }
 }

@@ -86,12 +86,16 @@
     <string name="terms_conditions">Terms &amp; Conditions</string>
 
     <!-- Bluetooth screen -->
+    <string name="bluetooth_notification_channel_id" translatable="false">bluetooth_default_channel</string>
     <string name="bluetooth_icon_description">Baseline_bluetooth_24</string>
     <string name="signal_level_icon_description">Baseline_signal_level_24</string>
     <string name="device_name">LYWSD03MMC</string>
     <string name="show_only_thermometers">Show only thermometers</string>
     <string name="connect">Connect</string>
     <string name="disconnect">Disconnect</string>
+    <string name="bluetooth_connection_is_running">Bluetooth connection is running</string>
+    <string name="bluetooth_connection_active">Bluetooth connection is active</string>
+    <string name="bluetooth_connection">Bluetooth connection</string>
 
     <!-- Chart screen -->
     <string name="temperature">Temperature:</string>

@@ -35,6 +35,7 @@ import com.softteco.template.ui.components.OnLifecycleEvent
 import com.softteco.template.ui.components.PrimaryButton
 import com.softteco.template.ui.theme.Dimens
 import com.softteco.template.utils.bluetooth.getBluetoothDeviceName
+import kotlinx.coroutines.launch
 
 @Composable
 fun BluetoothScreen(
@@ -54,13 +55,19 @@ fun BluetoothScreen(
         }
         viewModel.onConnectCallback {
             viewModel.emitDeviceConnectionStatusList()
-//            scope.launch {
-//                onConnect()
-//            }
+            scope.launch {
+                onConnect()
+            }
         }
 
         viewModel.onDisconnectCallback {
             viewModel.emitDeviceConnectionStatusList()
+        }
+
+        viewModel.onBluetoothModuleChangeStateCallback {
+            if(!it) {
+                viewModel.clearScanResult()
+            }
         }
     }
 
@@ -78,7 +85,6 @@ fun BluetoothScreen(
     OnLifecycleEvent { owner, event ->
         when (event) {
             Lifecycle.Event.ON_RESUME -> {
-                viewModel.disconnectFromDevice()
                 viewModel.registerReceiver()
                 viewModel.startScanIfHasPermissions()
             }
@@ -202,8 +208,11 @@ fun BluetoothDeviceCard(
             }
             PrimaryButton(
                 buttonText = stringResource(
-                    id = if (connectionStatus == true) R.string.disconnect
-                    else R.string.connect
+                    id = if (connectionStatus == true) {
+                        R.string.disconnect
+                    } else {
+                        R.string.connect
+                    }
                 ),
                 loading = false,
                 modifier = Modifier.weight(1F),

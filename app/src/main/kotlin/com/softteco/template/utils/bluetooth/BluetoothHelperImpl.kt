@@ -52,6 +52,8 @@ internal class BluetoothHelperImpl @Inject constructor(
     override var onDisconnect: (() -> Unit)? = null
     override var onScanResult: ((scanResult: ScanResult) -> Unit)? = null
     override var onDeviceResult: ((bluetoothDeviceData: BluetoothDeviceData) -> Unit)? = null
+    override var onBluetoothModuleChangeState: ((ifTurnOn: Boolean) -> Unit)? = null
+    @Volatile
     private var deviceConnectionStatusList = hashMapOf<String, BluetoothDeviceConnectionStatus>()
     private var connectedDevicesList = hashMapOf<String, BluetoothGatt>()
 
@@ -69,7 +71,8 @@ internal class BluetoothHelperImpl @Inject constructor(
                             scanResult.device.address,
                             scanResult.rssi,
                             0L
-                        ), false
+                        ),
+                        false
                     )
                 onScanResult?.invoke(scanResult)
             }
@@ -92,10 +95,18 @@ internal class BluetoothHelperImpl @Inject constructor(
                 ) {
                     BluetoothAdapter.STATE_ON -> {
                         startScanIfHasPermissions()
+                        onBluetoothModuleChangeState?.invoke(true)
                     }
 
                     BluetoothAdapter.STATE_OFF -> {
+                        activity.stopService(
+                            Intent(
+                                activity,
+                                BluetoothDeviceConnectionService::class.java
+                            )
+                        )
                         stopScan()
+                        onBluetoothModuleChangeState?.invoke(false)
                     }
                 }
             }
@@ -146,6 +157,14 @@ internal class BluetoothHelperImpl @Inject constructor(
                     deviceConnectionStatusList[it.device.address]?.isConnected = true
                     it.discoverServices()
                     onConnect?.invoke()
+                    if (checkRemainingConnectionForService()) {
+                        activity?.startForegroundService(
+                            Intent(
+                                activity,
+                                BluetoothDeviceConnectionService::class.java
+                            )
+                        )
+                    }
                 }
             }
 
@@ -154,6 +173,14 @@ internal class BluetoothHelperImpl @Inject constructor(
                     deviceConnectionStatusList[it.device.address]?.isConnected = false
                     it.close()
                     onDisconnect?.invoke()
+                    if (!checkRemainingConnectionForService()) {
+                        activity?.stopService(
+                            Intent(
+                                activity,
+                                BluetoothDeviceConnectionService::class.java
+                            )
+                        )
+                    }
                 }
             }
         }
@@ -268,5 +295,19 @@ internal class BluetoothHelperImpl @Inject constructor(
         this.onDeviceResult = onDeviceResult
     }
 
+    override fun onBluetoothModuleChangeStateCallback(onBluetoothModuleChangeState: (ifTurnOn: Boolean) -> Unit) {
+        this.onBluetoothModuleChangeState = onBluetoothModuleChangeState
+    }
+
     override fun getDeviceConnectionStatusList() = deviceConnectionStatusList
+
+    private fun checkRemainingConnectionForService(): Boolean {
+        var countConnection = 0
+        deviceConnectionStatusList.forEach {
+            if (it.value.isConnected) {
+                countConnection++
+            }
+        }
+        return countConnection == 1
+    }
 }

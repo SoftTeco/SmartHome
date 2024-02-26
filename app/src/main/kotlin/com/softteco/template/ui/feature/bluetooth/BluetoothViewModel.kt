@@ -58,8 +58,8 @@ class BluetoothViewModel @Inject constructor(
         emitDevices()
     }
 
-    fun disconnectFromDevice() {
-//        bluetoothHelper.disconnectFromDevice()
+    fun clearScanResult() {
+        _devices.value = emptyList()
     }
 
     fun registerReceiver() {
@@ -90,6 +90,10 @@ class BluetoothViewModel @Inject constructor(
         bluetoothHelper.onDisconnectCallback(onDisconnect)
     }
 
+    fun onBluetoothModuleChangeStateCallback(onBluetoothModuleChangeState: (ifTurnOn: Boolean) -> Unit) {
+        bluetoothHelper.onBluetoothModuleChangeStateCallback(onBluetoothModuleChangeState)
+    }
+
     fun emitDeviceConnectionStatusList() {
         _deviceConnectionStatusList.value =
             bluetoothHelper.getDeviceConnectionStatusList().values.toMutableList()
@@ -103,11 +107,11 @@ class BluetoothViewModel @Inject constructor(
     private fun emitDevices() {
         viewModelScope.launch(Dispatchers.IO) {
             mutex.withLock {
-        _devices.value =
-            _bluetoothDevices.toList().map { it.second.device }
-                .let { devices ->
-                    if (filtered) devices.filter { getBluetoothDeviceName(it) == filteredName } else devices
-                }
+                _devices.value =
+                    _bluetoothDevices.toList().map { it.second.device }
+                        .let { devices ->
+                            if (filtered) devices.filter { getBluetoothDeviceName(it) == filteredName } else devices
+                        }
             }
         }
     }

@@ -8,4 +8,5 @@ interface BluetoothState {
     var onDisconnect: (() -> Unit)?
     var onScanResult: ((scanResult: ScanResult) -> Unit)?
     var onDeviceResult: ((bluetoothDeviceData: BluetoothDeviceData) -> Unit)?
+    var onBluetoothModuleChangeState: ((ifTurnOn: Boolean) -> Unit)?
 }

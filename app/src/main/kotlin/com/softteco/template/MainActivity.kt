@@ -1,6 +1,7 @@
 package com.softteco.template
 
 import android.annotation.SuppressLint
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -22,6 +23,7 @@ import com.softteco.template.ui.AppContent
 import com.softteco.template.ui.feature.settings.PreferencesKeys
 import com.softteco.template.ui.theme.AppTheme
 import com.softteco.template.ui.theme.ThemeMode
+import com.softteco.template.utils.bluetooth.BluetoothDeviceConnectionService
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject

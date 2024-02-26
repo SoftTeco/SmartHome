@@ -67,5 +67,7 @@ interface BluetoothHelper {
      */
     fun onDeviceResultCallback(onDeviceResult: (bluetoothDeviceData: BluetoothDeviceData) -> Unit)
 
+    fun onBluetoothModuleChangeStateCallback(onBluetoothModuleChangeState: (ifTurnOn: Boolean) -> Unit)
+
     fun getDeviceConnectionStatusList(): HashMap<String, BluetoothDeviceConnectionStatus>
 }

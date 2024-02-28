@@ -70,6 +70,7 @@ internal class BluetoothHelperImpl @Inject constructor(
                             it,
                             scanResult.device.address,
                             scanResult.rssi,
+                            BluetoothDeviceType.LYWSD03MMC,
                             0L
                         ),
                         false

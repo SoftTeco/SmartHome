@@ -5,7 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.softteco.template.data.bluetooth.BluetoothHelper
 import com.softteco.template.data.bluetooth.entity.BluetoothDeviceData
-import com.softteco.template.ui.components.SnackBarState
+import com.softteco.template.ui.components.snackBar.SnackBarState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted

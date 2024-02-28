@@ -6,7 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.softteco.template.data.bluetooth.BluetoothHelper
 import com.softteco.template.data.bluetooth.entity.BluetoothDeviceConnectionStatus
-import com.softteco.template.ui.components.SnackBarState
+import com.softteco.template.ui.components.snackBar.SnackBarState
 import com.softteco.template.utils.bluetooth.getBluetoothDeviceName
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers

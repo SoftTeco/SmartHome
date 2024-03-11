@@ -21,13 +21,15 @@ import com.softteco.template.BuildConfig
 import com.softteco.template.MainActivity
 import com.softteco.template.data.base.model.BluetoothDeviceDb
 import com.softteco.template.data.bluetooth.BluetoothByteParser
-import com.softteco.template.data.bluetooth.BluetoothDeviceCacheStore
 import com.softteco.template.data.bluetooth.BluetoothHelper
 import com.softteco.template.data.bluetooth.BluetoothPermissionChecker
 import com.softteco.template.data.bluetooth.BluetoothState
 import com.softteco.template.data.bluetooth.entity.BluetoothDeviceConnectionStatus
 import com.softteco.template.data.bluetooth.entity.BluetoothDeviceData
 import com.softteco.template.data.bluetooth.entity.BluetoothDeviceType
+import com.softteco.template.data.bluetooth.usecase.BluetoothDeviceGetUseCase
+import com.softteco.template.data.bluetooth.usecase.BluetoothDeviceSaveUseCase
+import com.softteco.template.data.bluetooth.usecase.BluetoothDeviceUpdateLastConnectedTimeUseCase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
@@ -45,7 +47,9 @@ import javax.inject.Singleton
 internal class BluetoothHelperImpl @Inject constructor(
     private val bluetoothPermissionChecker: BluetoothPermissionChecker,
     private val bluetoothByteParser: BluetoothByteParser,
-    private val bluetoothDeviceCacheStore: BluetoothDeviceCacheStore
+    private val bluetoothDeviceSaveUseCase: BluetoothDeviceSaveUseCase,
+    private val bluetoothDeviceUpdateLastConnectedTimeUseCase: BluetoothDeviceUpdateLastConnectedTimeUseCase,
+    private val bluetoothDeviceGetUseCase: BluetoothDeviceGetUseCase
 ) : BluetoothHelper, BluetoothState {
 
     private var activity: MainActivity? = null
@@ -129,7 +133,7 @@ internal class BluetoothHelperImpl @Inject constructor(
             this.activity?.getSystemService(Context.LOCATION_SERVICE) as LocationManager
         runBlocking {
             withContext(Dispatchers.IO) {
-                bluetoothDeviceCacheStore.getBluetoothDevices().first().forEach {
+                bluetoothDeviceGetUseCase.execute().first().forEach {
                     savedBluetoothDevices.add(it.toEntity())
                 }
             }
@@ -311,12 +315,12 @@ internal class BluetoothHelperImpl @Inject constructor(
             deviceConnectionStatusList[it.device.address]?.bluetoothDevice?.let { bluetoothDevice ->
                 bluetoothDevice.connectedLastTime = System.currentTimeMillis()
                 if (savedBluetoothDevices.contains(bluetoothDevice)) {
-                    bluetoothDeviceCacheStore.updateLastConnectionTimeStamp(
+                    bluetoothDeviceUpdateLastConnectedTimeUseCase.execute(
                         bluetoothDevice.macAddress,
                         bluetoothDevice.connectedLastTime
                     )
                 } else {
-                    bluetoothDeviceCacheStore.saveBluetoothDevice(
+                    bluetoothDeviceSaveUseCase.execute(
                         BluetoothDeviceDb(
                             bluetoothDevice
                         )

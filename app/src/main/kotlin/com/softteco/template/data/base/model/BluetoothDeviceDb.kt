@@ -9,7 +9,8 @@ import com.softteco.template.data.bluetooth.entity.BluetoothDeviceType
 
 private const val DATABASE_ID = 0L
 
-@Entity(tableName = "bluetooth_devices",
+@Entity(
+    tableName = "bluetooth_devices",
     indices = [Index(value = ["macAddress"], unique = true)]
 )
 data class BluetoothDeviceDb(

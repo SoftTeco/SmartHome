@@ -4,13 +4,11 @@ import com.softteco.template.data.base.model.BluetoothDeviceDb
 import kotlinx.coroutines.flow.Flow
 
 interface BluetoothDeviceCacheStore {
-
-    suspend fun saveBluetoothDevice(bluetoothDevice: BluetoothDeviceDb): Flow<Unit>
+    fun saveBluetoothDevice(bluetoothDevice: BluetoothDeviceDb): Long
 
     fun getBluetoothDevices(): Flow<List<BluetoothDeviceDb>>
 
-    fun updateAutoConnectionState(deviceAddress: String, timeStamp: Long)
+    fun updateLastConnectionTimeStamp(macAddress: String, connectedLastTime: Long): Int
 
-    fun deleteDevice(deviceAddress: String)
-
+    fun deleteDevice(macAddress: String): Int
 }

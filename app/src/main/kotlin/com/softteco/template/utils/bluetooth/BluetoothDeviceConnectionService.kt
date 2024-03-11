@@ -13,6 +13,7 @@ import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import com.softteco.template.MainActivity
 import com.softteco.template.R
+import timber.log.Timber
 
 class BluetoothDeviceConnectionService : Service() {
 
@@ -22,13 +23,16 @@ class BluetoothDeviceConnectionService : Service() {
         const val BLUETOOTH_DEVICE_SERVICE_NOTIFICATION_ID = 1
     }
 
+    @Suppress("TooGenericExceptionCaught")
     @SuppressLint("ForegroundServiceType")
     override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
         createNotificationChannel()
         val notificationIntent = Intent(this, MainActivity::class.java)
         val pendingIntent = PendingIntent.getActivity(
             this,
-            0, notificationIntent, PendingIntent.FLAG_IMMUTABLE
+            0,
+            notificationIntent,
+            PendingIntent.FLAG_IMMUTABLE
         )
         val notification: Notification = NotificationCompat.Builder(
             this,
@@ -44,11 +48,14 @@ class BluetoothDeviceConnectionService : Service() {
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
                 startForeground(BLUETOOTH_DEVICE_SERVICE_NOTIFICATION_ID, notification)
             } else {
-                startForeground(BLUETOOTH_DEVICE_SERVICE_NOTIFICATION_ID, notification,
-                    FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE)
+                startForeground(
+                    BLUETOOTH_DEVICE_SERVICE_NOTIFICATION_ID,
+                    notification,
+                    FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE
+                )
             }
         } catch (e: Exception) {
-            e.printStackTrace()
+            Timber.e("Error starting service", e)
         }
 
         return START_NOT_STICKY

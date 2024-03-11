@@ -5,25 +5,24 @@ import com.softteco.template.data.base.model.BluetoothDeviceDb
 import com.softteco.template.data.bluetooth.BluetoothDeviceCacheStore
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
+import javax.inject.Singleton
 
-class BluetoothDevicesCacheStoreImpl @Inject constructor(private val bluetoothDevicesDao: BluetoothDeviceDao) :
+@Singleton
+class BluetoothDeviceCacheStoreImpl @Inject constructor(private val bluetoothDevicesDao: BluetoothDeviceDao) :
     BluetoothDeviceCacheStore {
-    override suspend fun saveBluetoothDevice(bluetoothDevice: BluetoothDeviceDb): Flow<Unit> {
-        bluetoothDevicesDao.insertOrUpdate(bluetoothDevice)
-        return bluetoothDevicesDao.insertBluetoothDeviceAndGetId(bluetoothDevice)
+    override fun saveBluetoothDevice(bluetoothDevice: BluetoothDeviceDb): Long {
+        return bluetoothDevicesDao.insertOrUpdate(bluetoothDevice)
     }
 
     override fun getBluetoothDevices(): Flow<List<BluetoothDeviceDb>> {
-        return bluetoothDevicesDao.getBluetoothDevices()
+        return bluetoothDevicesDao.getList()
     }
 
-    override fun updateAutoConnectionState(deviceAddress: String, timeStamp: Long) {
-        TODO("Not yet implemented")
+    override fun updateLastConnectionTimeStamp(macAddress: String, connectedLastTime: Long): Int {
+        return bluetoothDevicesDao.updateLastConnectionTimeStamp(macAddress, connectedLastTime)
     }
 
-    override fun deleteDevice(deviceAddress: String) {
-        TODO("Not yet implemented")
+    override fun deleteDevice(macAddress: String): Int {
+        return bluetoothDevicesDao.delete(macAddress)
     }
-
-
 }

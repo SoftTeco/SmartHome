@@ -1,9 +1,11 @@
 package com.softteco.template.data.di
 
 import com.softteco.template.data.bluetooth.BluetoothByteParser
+import com.softteco.template.data.bluetooth.BluetoothDeviceCacheStore
 import com.softteco.template.data.bluetooth.BluetoothHelper
 import com.softteco.template.data.bluetooth.BluetoothPermissionChecker
 import com.softteco.template.utils.bluetooth.BluetoothByteParserImpl
+import com.softteco.template.utils.bluetooth.BluetoothDeviceCacheStoreImpl
 import com.softteco.template.utils.bluetooth.BluetoothHelperImpl
 import com.softteco.template.utils.bluetooth.BluetoothPermissionCheckerImpl
 import dagger.Binds
@@ -24,4 +26,7 @@ internal interface BluetoothModule {
 
     @Binds
     fun bindBluetoothByteParserImpl(bluetoothByteParserImpl: BluetoothByteParserImpl): BluetoothByteParser
+
+    @Binds
+    fun bindBluetoothDeviceCacheStore(store: BluetoothDeviceCacheStoreImpl): BluetoothDeviceCacheStore
 }

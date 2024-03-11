@@ -8,7 +8,8 @@ import com.softteco.template.data.base.dao.BluetoothDeviceDao
 import com.softteco.template.data.base.model.BluetoothDeviceDb
 
 @Database(
-    entities = [BluetoothDeviceDb::class
+    entities = [
+        BluetoothDeviceDb::class
     ],
     version = 1,
     exportSchema = false
@@ -30,7 +31,6 @@ abstract class ProfileDataBase : RoomDatabase() {
             }
 
         private fun buildDatabase(context: Context): ProfileDataBase {
-
             return Room.databaseBuilder(
                 context.applicationContext,
                 ProfileDataBase::class.java,
@@ -42,5 +42,4 @@ abstract class ProfileDataBase : RoomDatabase() {
     }
 
     abstract fun bluetoothDevicesDao(): BluetoothDeviceDao
-
 }

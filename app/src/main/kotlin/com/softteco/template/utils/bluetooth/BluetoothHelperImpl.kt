@@ -19,13 +19,19 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import com.softteco.template.BuildConfig
 import com.softteco.template.MainActivity
+import com.softteco.template.data.base.model.BluetoothDeviceDb
 import com.softteco.template.data.bluetooth.BluetoothByteParser
+import com.softteco.template.data.bluetooth.BluetoothDeviceCacheStore
 import com.softteco.template.data.bluetooth.BluetoothHelper
 import com.softteco.template.data.bluetooth.BluetoothPermissionChecker
 import com.softteco.template.data.bluetooth.BluetoothState
 import com.softteco.template.data.bluetooth.entity.BluetoothDeviceConnectionStatus
 import com.softteco.template.data.bluetooth.entity.BluetoothDeviceData
 import com.softteco.template.data.bluetooth.entity.BluetoothDeviceType
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import no.nordicsemi.android.support.v18.scanner.BluetoothLeScannerCompat
 import no.nordicsemi.android.support.v18.scanner.ScanCallback
 import no.nordicsemi.android.support.v18.scanner.ScanResult
@@ -38,7 +44,8 @@ import javax.inject.Singleton
 @Singleton
 internal class BluetoothHelperImpl @Inject constructor(
     private val bluetoothPermissionChecker: BluetoothPermissionChecker,
-    private val bluetoothByteParser: BluetoothByteParser
+    private val bluetoothByteParser: BluetoothByteParser,
+    private val bluetoothDeviceCacheStore: BluetoothDeviceCacheStore
 ) : BluetoothHelper, BluetoothState {
 
     private var activity: MainActivity? = null
@@ -48,11 +55,14 @@ internal class BluetoothHelperImpl @Inject constructor(
     private lateinit var locationManager: LocationManager
     private var resultBluetoothEnableLauncher: ActivityResultLauncher<Intent>? = null
     private var resultLocationEnableLauncher: ActivityResultLauncher<Intent>? = null
+    private var savedBluetoothDevices =
+        mutableListOf<com.softteco.template.data.bluetooth.entity.BluetoothDevice>()
     override var onConnect: (() -> Unit)? = null
     override var onDisconnect: (() -> Unit)? = null
     override var onScanResult: ((scanResult: ScanResult) -> Unit)? = null
     override var onDeviceResult: ((bluetoothDeviceData: BluetoothDeviceData) -> Unit)? = null
     override var onBluetoothModuleChangeState: ((ifTurnOn: Boolean) -> Unit)? = null
+
     @Volatile
     private var deviceConnectionStatusList = hashMapOf<String, BluetoothDeviceConnectionStatus>()
     private var connectedDevicesList = hashMapOf<String, BluetoothGatt>()
@@ -117,6 +127,13 @@ internal class BluetoothHelperImpl @Inject constructor(
         bluetoothAdapter = bluetoothManager.adapter
         locationManager =
             this.activity?.getSystemService(Context.LOCATION_SERVICE) as LocationManager
+        runBlocking {
+            withContext(Dispatchers.IO) {
+                bluetoothDeviceCacheStore.getBluetoothDevices().first().forEach {
+                    savedBluetoothDevices.add(it.toEntity())
+                }
+            }
+        }
     }
 
     override fun drop() {
@@ -154,36 +171,11 @@ internal class BluetoothHelperImpl @Inject constructor(
     private val mGattCallback: BluetoothGattCallback = object : BluetoothGattCallback() {
         override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
             if (newState == BluetoothProfile.STATE_CONNECTED) {
-                gatt.let {
-                    connectedDevicesList[it.device.address] = it
-                    deviceConnectionStatusList[it.device.address]?.isConnected = true
-                    it.discoverServices()
-                    onConnect?.invoke()
-                    if (checkRemainingConnectionForService()) {
-                        activity?.startForegroundService(
-                            Intent(
-                                activity,
-                                BluetoothDeviceConnectionService::class.java
-                            )
-                        )
-                    }
-                }
+                provideConnectedState(gatt)
             }
 
             if (newState == BluetoothProfile.STATE_DISCONNECTED) {
-                gatt.let {
-                    deviceConnectionStatusList[it.device.address]?.isConnected = false
-                    it.close()
-                    onDisconnect?.invoke()
-                    if (!checkRemainingConnectionForService()) {
-                        activity?.stopService(
-                            Intent(
-                                activity,
-                                BluetoothDeviceConnectionService::class.java
-                            )
-                        )
-                    }
-                }
+                provideDisconnectedState(gatt)
             }
         }
 
@@ -311,5 +303,53 @@ internal class BluetoothHelperImpl @Inject constructor(
             }
         }
         return countConnection == 1
+    }
+
+    private fun provideConnectedState(bluetoothGatt: BluetoothGatt) {
+        bluetoothGatt.let {
+            connectedDevicesList[it.device.address] = it
+            deviceConnectionStatusList[it.device.address]?.bluetoothDevice?.let { bluetoothDevice ->
+                bluetoothDevice.connectedLastTime = System.currentTimeMillis()
+                if (savedBluetoothDevices.contains(bluetoothDevice)) {
+                    bluetoothDeviceCacheStore.updateLastConnectionTimeStamp(
+                        bluetoothDevice.macAddress,
+                        bluetoothDevice.connectedLastTime
+                    )
+                } else {
+                    bluetoothDeviceCacheStore.saveBluetoothDevice(
+                        BluetoothDeviceDb(
+                            bluetoothDevice
+                        )
+                    )
+                }
+            }
+            deviceConnectionStatusList[it.device.address]?.isConnected = true
+            it.discoverServices()
+            onConnect?.invoke()
+            if (checkRemainingConnectionForService()) {
+                activity?.startForegroundService(
+                    Intent(
+                        activity,
+                        BluetoothDeviceConnectionService::class.java
+                    )
+                )
+            }
+        }
+    }
+
+    private fun provideDisconnectedState(bluetoothGatt: BluetoothGatt) {
+        bluetoothGatt.let {
+            deviceConnectionStatusList[it.device.address]?.isConnected = false
+            it.close()
+            onDisconnect?.invoke()
+            if (!checkRemainingConnectionForService()) {
+                activity?.stopService(
+                    Intent(
+                        activity,
+                        BluetoothDeviceConnectionService::class.java
+                    )
+                )
+            }
+        }
     }
 }

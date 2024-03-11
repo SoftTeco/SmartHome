@@ -78,7 +78,7 @@ object DataStoreModule {
     @Provides
     @JvmStatic
     @Singleton
-    fun provideDataBase(appContext: Context): ProfileDataBase =
+    fun provideDataBase(@ApplicationContext appContext: Context): ProfileDataBase =
         ProfileDataBase.getInstance(appContext)
 
     @Provides

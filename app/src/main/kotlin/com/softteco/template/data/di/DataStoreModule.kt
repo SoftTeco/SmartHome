@@ -12,6 +12,7 @@ import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.preferencesDataStoreFile
 import com.softteco.template.data.base.ProfileDataBase
 import com.softteco.template.data.base.dao.BluetoothDeviceDao
+import com.softteco.template.data.base.dao.MeasurementDao
 import com.softteco.template.data.profile.dto.AuthTokenDto
 import com.softteco.template.data.profile.dto.ProfileDto
 import com.softteco.template.utils.AuthTokenSerializer
@@ -86,4 +87,10 @@ object DataStoreModule {
     @Singleton
     fun provideBluetoothDevicesDao(dataBase: ProfileDataBase): BluetoothDeviceDao =
         dataBase.bluetoothDevicesDao()
+
+    @Provides
+    @JvmStatic
+    @Singleton
+    fun provideMeasurementDao(dataBase: ProfileDataBase): MeasurementDao =
+        dataBase.measurementDao()
 }

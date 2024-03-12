@@ -12,6 +12,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -21,12 +22,12 @@ import com.softteco.template.Constants.CHARTS_STEP_VALUE
 import com.softteco.template.Constants.SPACE_STRING
 import com.softteco.template.MainActivity
 import com.softteco.template.R
-import com.softteco.template.data.bluetooth.entity.BluetoothDeviceData
+import com.softteco.template.data.bluetooth.entity.BluetoothDeviceType
 import com.softteco.template.ui.components.CustomTopAppBar
-import com.softteco.template.ui.theme.Dimens
 import com.softteco.template.ui.theme.Dimens.PaddingDefault
 import com.softteco.template.ui.theme.Dimens.PaddingExtraLarge
 import com.softteco.template.utils.generateRandomColor
+import kotlinx.coroutines.launch
 import lecho.lib.hellocharts.model.Axis
 import lecho.lib.hellocharts.model.Line
 import lecho.lib.hellocharts.model.LineChartData
@@ -46,12 +47,15 @@ fun ChartScreen(
     onBackClicked: () -> Unit,
     viewModel: ChartViewModel = hiltViewModel()
 ) {
+    val scope = rememberCoroutineScope()
     val state by viewModel.state.collectAsState()
     activity = LocalContext.current as MainActivity
 
     LaunchedEffect(Unit) {
-        viewModel.onDeviceResultCallback {
-            viewModel.bluetoothData(it)
+        viewModel.onDeviceResultCallback { bluetoothDeviceAddress ->
+            scope.launch {
+                viewModel.getMeasurements(bluetoothDeviceAddress)
+            }
         }
     }
 
@@ -86,67 +90,74 @@ fun Charts(
     val tmpColor by remember { mutableIntStateOf(generateRandomColor()) }
     val humColor by remember { mutableIntStateOf(generateRandomColor()) }
 
-    when (state.dataFromBluetoothDevice) {
-        is BluetoothDeviceData.DataLYWSD03MMC -> {
-            state.dataFromBluetoothDevice.let {
-                Column(
-                    modifier = modifier.padding(start = Dimens.PaddingDefault)
-                ) {
-                    Text(
-                        text = stringResource(R.string.temperature).plus(SPACE_STRING)
-                            .plus(it.temperature.toString()).plus(SPACE_STRING)
-                            .plus(stringResource(R.string.temperature_degrees))
-                    )
-                    Text(
-                        text = stringResource(R.string.humidity).plus(SPACE_STRING)
-                            .plus(it.humidity.toString()).plus(SPACE_STRING)
-                            .plus(stringResource(R.string.humidity_percent))
-                    )
-                    Text(
-                        text = stringResource(R.string.battery).plus(SPACE_STRING)
-                            .plus(it.battery.toString()).plus(SPACE_STRING)
-                            .plus(stringResource(R.string.battery_voltage))
-                    )
-                    AndroidView(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(
-                                top = PaddingExtraLarge,
-                                end = PaddingExtraLarge,
-                                bottom = PaddingDefault
-                            ),
-                        factory = {
-                            lineChartView
-                        }
-                    )
+    if (state.measurements.isNotEmpty()) {
+        when (state.measurements.last().bluetoothDeviceType) {
+            BluetoothDeviceType.LYWSD03MMC -> {
+                state.measurements.last().let {
+                    Column(
+                        modifier = modifier.padding(start = PaddingDefault)
+                    ) {
+                        Text(
+                            text = stringResource(R.string.temperature).plus(SPACE_STRING)
+                                .plus(it.temperature.toString()).plus(SPACE_STRING)
+                                .plus(stringResource(R.string.temperature_degrees))
+                        )
+                        Text(
+                            text = stringResource(R.string.humidity).plus(SPACE_STRING)
+                                .plus(it.humidity.toString()).plus(SPACE_STRING)
+                                .plus(stringResource(R.string.humidity_percent))
+                        )
+                        Text(
+                            text = stringResource(R.string.battery).plus(SPACE_STRING)
+                                .plus(it.battery.toString()).plus(SPACE_STRING)
+                                .plus(stringResource(R.string.battery_voltage))
+                        )
+                        AndroidView(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(
+                                    top = PaddingExtraLarge,
+                                    end = PaddingExtraLarge,
+                                    bottom = PaddingDefault
+                                ),
+                            factory = {
+                                lineChartView
+                            }
+                        )
+                    }
+
+                    tempValues.clear()
+                    humValues.clear()
+
+                    state.measurements.forEach {
+                        tempValues.add(
+                            PointValue(temperatureIndex, it.temperature.toFloat()).setLabel(
+                                stringResource(R.string.temperature_point_label)
+                            )
+                        )
+                        humValues.add(
+                            PointValue(
+                                humidityIndex,
+                                it.humidity.toFloat()
+                            ).setLabel(stringResource(R.string.humidity_point_label))
+                        )
+
+                        temperatureIndex += CHARTS_STEP_VALUE
+                        humidityIndex += CHARTS_STEP_VALUE
+                    }
+
+                    lines.add(Line(tempValues).setColor(tmpColor).setHasLabels(true))
+                    lines.add(Line(humValues).setColor(humColor).setHasLabels(true))
+
+                    data.axisYLeft = Axis()
+                    data.axisXBottom = Axis()
+                    data.lines = lines
+
+                    lineChartView.lineChartData = data
                 }
-
-                tempValues.add(
-                    PointValue(temperatureIndex, it.temperature.toFloat()).setLabel(
-                        stringResource(R.string.temperature_point_label)
-                    )
-                )
-                humValues.add(
-                    PointValue(
-                        humidityIndex,
-                        it.humidity.toFloat()
-                    ).setLabel(stringResource(R.string.humidity_point_label))
-                )
-
-                temperatureIndex += CHARTS_STEP_VALUE
-                humidityIndex += CHARTS_STEP_VALUE
-
-                lines.add(Line(tempValues).setColor(tmpColor).setHasLabels(true))
-                lines.add(Line(humValues).setColor(humColor).setHasLabels(true))
-
-                data.axisYLeft = Axis()
-                data.axisXBottom = Axis()
-                data.lines = lines
-
-                lineChartView.lineChartData = data
             }
-        }
 
-        else -> {}
+            else -> {}
+        }
     }
 }

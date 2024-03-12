@@ -18,7 +18,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -35,15 +34,13 @@ import com.softteco.template.ui.components.OnLifecycleEvent
 import com.softteco.template.ui.components.PrimaryButton
 import com.softteco.template.ui.theme.Dimens
 import com.softteco.template.utils.bluetooth.getBluetoothDeviceName
-import kotlinx.coroutines.launch
 
 @Composable
 fun BluetoothScreen(
-    onConnect: () -> Unit,
+    onShowChart: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: BluetoothViewModel = hiltViewModel()
 ) {
-    val scope = rememberCoroutineScope()
     val state by viewModel.state.collectAsState()
     val deviceName = stringResource(R.string.device_name)
 
@@ -55,9 +52,6 @@ fun BluetoothScreen(
         }
         viewModel.onConnectCallback {
             viewModel.emitDeviceConnectionStatusList()
-            scope.launch {
-                onConnect()
-            }
         }
 
         viewModel.onDisconnectCallback {
@@ -78,6 +72,10 @@ fun BluetoothScreen(
         state = state,
         onItemClicked = { bluetoothDevice ->
             viewModel.provideConnectionToDevice(bluetoothDevice)
+        },
+        onShowChart = onShowChart,
+        onSetCurrentlyViewedBluetoothDeviceAddress = { bluetoothDeviceAddress ->
+            viewModel.setCurrentlyViewedBluetoothDeviceAddress(bluetoothDeviceAddress)
         },
         onFilter,
         modifier = modifier
@@ -102,6 +100,8 @@ fun BluetoothScreen(
 private fun ScreenContent(
     state: BluetoothViewModel.State,
     onItemClicked: (BluetoothDevice) -> Unit,
+    onShowChart: () -> Unit,
+    onSetCurrentlyViewedBluetoothDeviceAddress: (String) -> Unit,
     onFilter: (checked: Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -115,6 +115,8 @@ private fun ScreenContent(
             devices = state.devices,
             devicesConnectionStatusList = state.devicesConnectionStatusList,
             onItemClicked = onItemClicked,
+            onShowChart = onShowChart,
+            onSetCurrentlyViewedBluetoothDeviceAddress = onSetCurrentlyViewedBluetoothDeviceAddress
         )
     }
 }
@@ -151,6 +153,8 @@ fun BluetoothDevicesList(
     devices: List<BluetoothDevice>,
     devicesConnectionStatusList: List<BluetoothDeviceConnectionStatus>,
     onItemClicked: (BluetoothDevice) -> Unit,
+    onShowChart: () -> Unit,
+    onSetCurrentlyViewedBluetoothDeviceAddress: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     LazyColumn(modifier = modifier.fillMaxSize()) {
@@ -161,7 +165,9 @@ fun BluetoothDevicesList(
                         BluetoothDeviceCard(
                             bluetoothDevice = device,
                             connectionStatus = it.isConnected,
-                            onItemClicked = onItemClicked
+                            onItemClicked = onItemClicked,
+                            onShowChart = onShowChart,
+                            onSetCurrentlyViewedBluetoothDeviceAddress = onSetCurrentlyViewedBluetoothDeviceAddress
                         )
                     }
                 }
@@ -175,6 +181,8 @@ fun BluetoothDeviceCard(
     bluetoothDevice: BluetoothDevice,
     connectionStatus: Boolean?,
     onItemClicked: (BluetoothDevice) -> Unit,
+    onShowChart: () -> Unit,
+    onSetCurrentlyViewedBluetoothDeviceAddress: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -184,7 +192,12 @@ fun BluetoothDeviceCard(
     ) {
         Row(
             modifier = Modifier
-                .clickable { }
+                .clickable {
+                    if (connectionStatus == true) {
+                        onShowChart.invoke()
+                        onSetCurrentlyViewedBluetoothDeviceAddress.invoke(bluetoothDevice.address)
+                    }
+                }
                 .padding(Dimens.PaddingSmall),
             verticalAlignment = Alignment.CenterVertically
         ) {

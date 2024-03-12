@@ -6,5 +6,5 @@ import javax.inject.Inject
 class MeasurementGetUseCase @Inject constructor(
     private val cacheStore: MeasurementCacheStore
 ) {
-    fun execute() = cacheStore.getMeasurements()
+    fun execute(macAddressOfDevice: String) = cacheStore.getMeasurements(macAddressOfDevice)
 }

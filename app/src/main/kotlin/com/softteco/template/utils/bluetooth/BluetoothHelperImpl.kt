@@ -20,6 +20,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import com.softteco.template.BuildConfig
 import com.softteco.template.MainActivity
 import com.softteco.template.data.base.model.BluetoothDeviceDb
+import com.softteco.template.data.base.model.MeasurementDb
 import com.softteco.template.data.bluetooth.BluetoothByteParser
 import com.softteco.template.data.bluetooth.BluetoothHelper
 import com.softteco.template.data.bluetooth.BluetoothPermissionChecker
@@ -30,6 +31,8 @@ import com.softteco.template.data.bluetooth.entity.BluetoothDeviceType
 import com.softteco.template.data.bluetooth.usecase.BluetoothDeviceGetUseCase
 import com.softteco.template.data.bluetooth.usecase.BluetoothDeviceSaveUseCase
 import com.softteco.template.data.bluetooth.usecase.BluetoothDeviceUpdateLastConnectedTimeUseCase
+import com.softteco.template.data.measurement.entity.MeasurementDevice
+import com.softteco.template.data.measurement.usecase.MeasurementSaveUseCase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
@@ -49,7 +52,8 @@ internal class BluetoothHelperImpl @Inject constructor(
     private val bluetoothByteParser: BluetoothByteParser,
     private val bluetoothDeviceSaveUseCase: BluetoothDeviceSaveUseCase,
     private val bluetoothDeviceUpdateLastConnectedTimeUseCase: BluetoothDeviceUpdateLastConnectedTimeUseCase,
-    private val bluetoothDeviceGetUseCase: BluetoothDeviceGetUseCase
+    private val bluetoothDeviceGetUseCase: BluetoothDeviceGetUseCase,
+    private val measurementSaveUseCase: MeasurementSaveUseCase
 ) : BluetoothHelper, BluetoothState {
 
     private var activity: MainActivity? = null
@@ -64,8 +68,11 @@ internal class BluetoothHelperImpl @Inject constructor(
     override var onConnect: (() -> Unit)? = null
     override var onDisconnect: (() -> Unit)? = null
     override var onScanResult: ((scanResult: ScanResult) -> Unit)? = null
-    override var onDeviceResult: ((bluetoothDeviceData: BluetoothDeviceData) -> Unit)? = null
+    override var onDeviceResult: ((macAddress: String) -> Unit)? = null
     override var onBluetoothModuleChangeState: ((ifTurnOn: Boolean) -> Unit)? = null
+
+    @Volatile
+    private var currentlyViewedBluetoothDeviceAddress = ""
 
     @Volatile
     private var deviceConnectionStatusList = hashMapOf<String, BluetoothDeviceConnectionStatus>()
@@ -221,11 +228,22 @@ internal class BluetoothHelperImpl @Inject constructor(
             characteristic: BluetoothGattCharacteristic
         ) {
             characteristic.value.let {
-                onDeviceResult?.invoke(
-                    bluetoothByteParser.parseBytes(
-                        it,
-                        BluetoothDeviceType.LYWSD03MMC
-                    ) as BluetoothDeviceData.DataLYWSD03MMC
+                val bluetoothDeviceData = bluetoothByteParser.parseBytes(
+                    it,
+                    BluetoothDeviceType.LYWSD03MMC
+                ) as BluetoothDeviceData.DataLYWSD03MMC
+                onDeviceResult?.invoke(currentlyViewedBluetoothDeviceAddress)
+                measurementSaveUseCase.execute(
+                    MeasurementDb(
+                        MeasurementDevice(
+                            UUID.randomUUID().toString(),
+                            bluetoothDeviceData.temperature,
+                            bluetoothDeviceData.humidity,
+                            bluetoothDeviceData.battery,
+                            BluetoothDeviceType.LYWSD03MMC,
+                            gatt.device.address
+                        )
+                    )
                 )
             }
         }
@@ -289,7 +307,7 @@ internal class BluetoothHelperImpl @Inject constructor(
         this.onDisconnect = onDisconnect
     }
 
-    override fun onDeviceResultCallback(onDeviceResult: (bluetoothDeviceData: BluetoothDeviceData) -> Unit) {
+    override fun onDeviceResultCallback(onDeviceResult: (macAddress: String) -> Unit) {
         this.onDeviceResult = onDeviceResult
     }
 
@@ -298,6 +316,10 @@ internal class BluetoothHelperImpl @Inject constructor(
     }
 
     override fun getDeviceConnectionStatusList() = deviceConnectionStatusList
+
+    override fun setCurrentlyViewedBluetoothDeviceAddress(bluetoothDeviceAddress: String) {
+        currentlyViewedBluetoothDeviceAddress = bluetoothDeviceAddress
+    }
 
     private fun checkRemainingConnectionForService(): Boolean {
         var countConnection = 0

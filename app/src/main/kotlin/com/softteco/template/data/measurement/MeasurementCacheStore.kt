@@ -6,7 +6,7 @@ import kotlinx.coroutines.flow.Flow
 interface MeasurementCacheStore {
     fun saveMeasurement(measurement: MeasurementDb): Long
 
-    fun getMeasurements(): Flow<List<MeasurementDb>>
+    fun getMeasurements(macAddressOfDevice: String): Flow<List<MeasurementDb>>
 
     fun deleteMeasurement(guid: String): Int
 }

@@ -4,7 +4,6 @@ import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGatt
 import com.softteco.template.MainActivity
 import com.softteco.template.data.bluetooth.entity.BluetoothDeviceConnectionStatus
-import com.softteco.template.data.bluetooth.entity.BluetoothDeviceData
 import no.nordicsemi.android.support.v18.scanner.ScanResult
 
 interface BluetoothHelper {
@@ -65,9 +64,20 @@ interface BluetoothHelper {
     /**
      * Callback to receive data from the Bluetooth device.
      */
-    fun onDeviceResultCallback(onDeviceResult: (bluetoothDeviceData: BluetoothDeviceData) -> Unit)
+    fun onDeviceResultCallback(onDeviceResult: (macAddress: String) -> Unit)
 
+    /**
+     * Callback to catch action with current state of Bluetooth module.
+     */
     fun onBluetoothModuleChangeStateCallback(onBluetoothModuleChangeState: (ifTurnOn: Boolean) -> Unit)
 
+    /**
+     * Get connection statuses of known Bluetooth devices.
+     */
     fun getDeviceConnectionStatusList(): HashMap<String, BluetoothDeviceConnectionStatus>
+
+    /**
+     * Set currently viewed Bluetooth device address for Charts Screen.
+     */
+    fun setCurrentlyViewedBluetoothDeviceAddress(bluetoothDeviceAddress: String)
 }

@@ -4,7 +4,8 @@ import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
-import com.softteco.template.data.measurement.entity.Measurement
+import com.softteco.template.data.bluetooth.entity.BluetoothDeviceType
+import com.softteco.template.data.measurement.entity.MeasurementDevice
 
 private const val DATABASE_ID = 0L
 
@@ -24,24 +25,28 @@ data class MeasurementDb(
     var humidity: Int,
     @ColumnInfo(name = "battery")
     var battery: Double,
+    @ColumnInfo(name = "bluetoothDeviceType")
+    var bluetoothDeviceType: String,
     @ColumnInfo(name = "macAddressOfDevice")
     var macAddressOfDevice: String
 ) : MeasurementSavedDb() {
-    constructor(entity: Measurement.MeasurementLYWSD03MMC) : this(
+    constructor(entity: MeasurementDevice) : this(
         DATABASE_ID,
         entity.guid,
         entity.temperature,
         entity.humidity,
         entity.battery,
+        entity.bluetoothDeviceType.toString(),
         entity.macAddressOfDevice
     )
 
-    override fun toEntity(): Measurement.MeasurementLYWSD03MMC {
-        return Measurement.MeasurementLYWSD03MMC(
+    override fun toEntity(): MeasurementDevice {
+        return MeasurementDevice(
             guid = guid,
             temperature = temperature,
             humidity = humidity,
             battery = battery,
+            bluetoothDeviceType = BluetoothDeviceType.valueOf(bluetoothDeviceType),
             macAddressOfDevice = macAddressOfDevice
         )
     }

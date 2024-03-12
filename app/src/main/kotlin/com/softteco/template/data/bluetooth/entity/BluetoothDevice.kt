@@ -4,6 +4,6 @@ data class BluetoothDevice(
     val name: String,
     val macAddress: String,
     val rssi: Int = 0,
-    val deviceType: BluetoothDeviceType,
+    val bluetoothDeviceType: BluetoothDeviceType,
     var connectedLastTime: Long
 )

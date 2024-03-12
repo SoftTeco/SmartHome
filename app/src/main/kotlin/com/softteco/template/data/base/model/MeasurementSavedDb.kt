@@ -1,7 +1,7 @@
 package com.softteco.template.data.base.model
 
-import com.softteco.template.data.measurement.entity.Measurement
+import com.softteco.template.data.measurement.entity.MeasurementDevice
 
 abstract class MeasurementSavedDb {
-    abstract fun toEntity(): Measurement.MeasurementLYWSD03MMC
+    abstract fun toEntity(): MeasurementDevice
 }

@@ -12,8 +12,8 @@ interface MeasurementDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun insertOrUpdate(measurement: MeasurementDb): Long
 
-    @Query("select * from measurements")
-    fun getList(): Flow<List<MeasurementDb>>
+    @Query("select * from measurements WHERE macAddressOfDevice = :macAddressOfDevice")
+    fun getList(macAddressOfDevice: String): Flow<List<MeasurementDb>>
 
     @Query("DELETE FROM measurements WHERE guid = :guid")
     fun delete(guid: String): Int

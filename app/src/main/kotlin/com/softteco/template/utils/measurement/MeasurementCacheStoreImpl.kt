@@ -14,8 +14,8 @@ class MeasurementCacheStoreImpl @Inject constructor(private val measurementDao: 
         return measurementDao.insertOrUpdate(measurement)
     }
 
-    override fun getMeasurements(): Flow<List<MeasurementDb>> {
-        return measurementDao.getList()
+    override fun getMeasurements(macAddressOfDevice: String): Flow<List<MeasurementDb>> {
+        return measurementDao.getList(macAddressOfDevice)
     }
 
     override fun deleteMeasurement(guid: String): Int {

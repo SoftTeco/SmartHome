@@ -104,6 +104,10 @@ class BluetoothViewModel @Inject constructor(
         emitDevices()
     }
 
+    fun setCurrentlyViewedBluetoothDeviceAddress(bluetoothDeviceAddress: String) {
+        bluetoothHelper.setCurrentlyViewedBluetoothDeviceAddress(bluetoothDeviceAddress)
+    }
+
     private fun emitDevices() {
         viewModelScope.launch(Dispatchers.IO) {
             mutex.withLock {

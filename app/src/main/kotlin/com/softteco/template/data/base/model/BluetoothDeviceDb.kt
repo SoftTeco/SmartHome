@@ -21,8 +21,8 @@ data class BluetoothDeviceDb(
     var name: String,
     @ColumnInfo(name = "macAddress")
     var macAddress: String,
-    @ColumnInfo(name = "deviceType")
-    var deviceType: String,
+    @ColumnInfo(name = "bluetoothDeviceType")
+    var bluetoothDeviceType: String,
     @ColumnInfo(name = "connectedLastTime")
     var connectedLastTime: Long
 ) : BluetoothDevicesSavedDb() {
@@ -30,7 +30,7 @@ data class BluetoothDeviceDb(
         DATABASE_ID,
         entity.name,
         entity.macAddress,
-        entity.deviceType.toString(),
+        entity.bluetoothDeviceType.toString(),
         entity.connectedLastTime
     )
 
@@ -38,7 +38,7 @@ data class BluetoothDeviceDb(
         return BluetoothDevice(
             name = name,
             macAddress = macAddress,
-            deviceType = BluetoothDeviceType.valueOf(deviceType),
+            bluetoothDeviceType = BluetoothDeviceType.valueOf(bluetoothDeviceType),
             connectedLastTime = connectedLastTime
         )
     }

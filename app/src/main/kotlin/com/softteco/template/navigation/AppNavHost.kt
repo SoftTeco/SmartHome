@@ -60,7 +60,7 @@ fun NavGraphBuilder.bottomBarGraph(
         composable(Screen.Home.route) {
             BluetoothScreen(
                 modifier = modifier,
-                onConnect = { }
+                onShowChart = { navController.navigate(Screen.Chart.route) }
             )
         }
         composable(Screen.Chart.route) {
@@ -155,7 +155,7 @@ fun NavGraphBuilder.bluetoothGraph(
         composable(Screen.Bluetooth.route) {
             BluetoothScreen(
                 modifier = modifier,
-                onConnect = { }
+                onShowChart = { navController.navigate(Screen.Chart.route) }
             )
         }
         composable(Screen.Chart.route) {

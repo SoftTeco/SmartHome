@@ -21,7 +21,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ElevatedCard
@@ -29,6 +28,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ShapeDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.rememberDatePickerState
@@ -124,8 +124,8 @@ private fun ScreenContent(
 ) {
     Column(
         modifier
-            .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
+            .fillMaxSize(),
     ) {
         CustomTopAppBar(
             stringResource(id = R.string.profile),
@@ -203,7 +203,7 @@ private fun ProfileHeader(
                 true
             )
             Column(Modifier, verticalArrangement = Arrangement.spacedBy(PaddingSmall)) {
-                Text(username, style = MaterialTheme.typography.headlineMedium)
+                Text(username, style = MaterialTheme.typography.titleMedium)
                 Text(email)
             }
         }
@@ -345,7 +345,7 @@ private fun BirthDateField(
         DatePickerDialog(
             onDismissRequest = onDismissDialog,
             confirmButton = {
-                Button(
+                TextButton(
                     content = { Text(stringResource(R.string.ok)) },
                     onClick = {
                         datePickerState.selectedDateMillis?.let { millis ->
@@ -358,7 +358,10 @@ private fun BirthDateField(
                 )
             },
             dismissButton = {
-                Button(onClick = onDismissDialog) { Text(stringResource(R.string.cancel)) }
+                TextButton(
+                    content = { Text(stringResource(R.string.cancel)) },
+                    onClick = onDismissDialog
+                )
             },
             modifier = Modifier.fillMaxWidth(),
         ) {

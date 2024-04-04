@@ -4,7 +4,6 @@ import android.os.Build
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -43,7 +42,6 @@ fun AppContent(
     Box {
         Scaffold(
             modifier = modifier.fillMaxSize(),
-            containerColor = MaterialTheme.colorScheme.background,
             bottomBar = {
                 AppBottomBar(navController = navController)
             },

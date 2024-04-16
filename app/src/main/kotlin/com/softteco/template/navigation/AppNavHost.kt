@@ -20,8 +20,9 @@ import com.softteco.template.navigation.AppNavHost.RESET_TOKEN_ARG
 import com.softteco.template.ui.feature.forgotPassword.ForgotPasswordScreen
 import com.softteco.template.ui.feature.home.HomeScreen
 import com.softteco.template.ui.feature.home.device.connection.AddNewDeviceScreen
-import com.softteco.template.ui.feature.home.device.connection.ManualSelectionScreen
 import com.softteco.template.ui.feature.home.device.connection.ScanQRScreen
+import com.softteco.template.ui.feature.home.device.connection.manual.ManualSelectionScreen
+import com.softteco.template.ui.feature.home.device.connection.manual.SearchDeviceScreen
 import com.softteco.template.ui.feature.home.notifications.NotificationsScreen
 import com.softteco.template.ui.feature.home.search.SearchScreen
 import com.softteco.template.ui.feature.login.LoginScreen
@@ -179,7 +180,19 @@ fun NavGraphBuilder.homeGraph(navController: NavController, modifier: Modifier =
             ScanQRScreen(onBackClicked = { navController.navigateUp() }, modifier)
         }
         composable(Screen.ManualSelection.route) {
-            ManualSelectionScreen(onBackClicked = { navController.navigateUp() }, modifier)
+            ManualSelectionScreen(
+                onBackClicked = { navController.navigateUp() },
+                onSearchClick = { navController.navigate(Screen.SearchDevice.route) },
+                onDeviceClick = { /*TODO*/ },
+                modifier
+            )
+        }
+        composable(Screen.SearchDevice.route) {
+            SearchDeviceScreen(
+                onBackClicked = { navController.navigateUp() },
+                onDeviceClick = { /*TODO*/ },
+                modifier
+            )
         }
 
         composable(Screen.Search.route) {

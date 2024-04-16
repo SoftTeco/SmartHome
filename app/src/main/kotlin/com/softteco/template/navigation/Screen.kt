@@ -6,6 +6,7 @@ sealed class Screen(val route: String) {
     data object AddNewDevice : Screen("add_new_device")
     data object ScanQR : Screen("scan_qr")
     data object ManualSelection : Screen("manual_selection")
+    data object SearchDevice : Screen("search_device")
 
     data object Search : Screen("search")
     data object Notifications : Screen("notifications")

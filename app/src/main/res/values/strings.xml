@@ -78,4 +78,15 @@
 
     <!-- Add New Device screen -->
     <string name="add_new_device_title">Add New Device</string>
+    <string name="add_device_scan_qr_title">Scan the QR code</string>
+    <string name="add_device_scan_qr_subtitle">To add a device, scan the QR code on the device</string>
+    <string name="add_device_manual_selection_title">Manual selection</string>
+    <string name="add_device_manual_selection_subtitle">Manually select a device from the list to add it</string>
+
+    <!-- Scan QR screen -->
+    <string name="scan_qr_title">Scan the QR code on your device</string>
+
+    <!-- Manual Selection screen -->
+    <string name="manual_selection_title">Manual Selection</string>
+
 </resources>

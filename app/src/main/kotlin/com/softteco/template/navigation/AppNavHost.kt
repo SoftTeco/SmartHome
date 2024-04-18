@@ -19,6 +19,8 @@ import com.softteco.template.navigation.AppNavHost.RESET_PASSWORD_PATH
 import com.softteco.template.navigation.AppNavHost.RESET_TOKEN_ARG
 import com.softteco.template.ui.feature.home.HomeScreen
 import com.softteco.template.ui.feature.home.device.connection.AddNewDeviceScreen
+import com.softteco.template.ui.feature.home.device.connection.ManualSelectionScreen
+import com.softteco.template.ui.feature.home.device.connection.ScanQRScreen
 import com.softteco.template.ui.feature.home.notifications.NotificationsScreen
 import com.softteco.template.ui.feature.home.search.SearchScreen
 import com.softteco.template.ui.feature.onboarding.login.LoginScreen
@@ -171,8 +173,20 @@ fun NavGraphBuilder.homeGraph(navController: NavController, modifier: Modifier =
         route = Graph.Home.route
     ) {
         composable(Screen.AddNewDevice.route) {
-            AddNewDeviceScreen(onBackClicked = { navController.navigateUp() }, modifier)
+            AddNewDeviceScreen(
+                onBackClicked = { navController.navigateUp() },
+                onScanClick = { navController.navigate(Screen.ScanQR.route) },
+                onManualClick = { navController.navigate(Screen.ManualSelection.route) },
+                modifier
+            )
         }
+        composable(Screen.ScanQR.route) {
+            ScanQRScreen(onBackClicked = { navController.navigateUp() }, modifier)
+        }
+        composable(Screen.ManualSelection.route) {
+            ManualSelectionScreen(onBackClicked = { navController.navigateUp() }, modifier)
+        }
+
         composable(Screen.Search.route) {
             SearchScreen(onBackClicked = { navController.navigateUp() }, modifier)
         }

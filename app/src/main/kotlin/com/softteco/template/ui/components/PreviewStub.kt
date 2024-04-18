@@ -2,6 +2,7 @@ package com.softteco.template.ui.components
 
 import com.softteco.template.R
 import com.softteco.template.data.device.Device
+import com.softteco.template.data.device.SupportedDevice
 import java.util.UUID
 
 object PreviewStub {
@@ -12,15 +13,16 @@ object PreviewStub {
                     type = Device.Type.TemperatureAndHumidity,
                     family = Device.Family.Sensor,
                     id = UUID.randomUUID(),
+                    defaultName = "Temperature and Humidity Monitor",
                     name = "Temperature and Humidity Monitor",
-                    img =
-                    "https://upload.wikimedia.org/wikipedia/commons/e/ee/Raumbedienger%C3%A4t.jpg",
+                    img = "file:///android_asset/icon/temperature_monitor.webp",
                     location = "Bedroom",
                 ),
                 Device.Basic(
                     id = UUID.randomUUID(),
+                    defaultName = "Washing Machine",
                     name = "Washing Machine",
-                    img = "https://upload.wikimedia.org/wikipedia/commons/0/08/LGwashingmachine.jpg",
+                    img = "file:///android_asset/icon/washing_machine.webp",
                     location = "Kitchen",
                     type = Device.Type.WashingMachine,
                     family = Device.Family.Cleaning
@@ -29,9 +31,10 @@ object PreviewStub {
                     override val type = Device.Type.RobotVacuum
                     override val family = Device.Family.Cleaning
                     override val id = UUID.randomUUID()
+                    override val defaultName = "Robot Vacuum-Mop"
                     override val name = "Robot Vacuum-Mop"
                     override val img =
-                        "https://upload.wikimedia.org/wikipedia/commons/0/09/IRobot-Roomba-Top-view-01.jpg"
+                        "file:///android_asset/icon/robot_vacuum.webp"
                     override val location = "Living room"
 
                     override val onClickAction = {}
@@ -40,5 +43,13 @@ object PreviewStub {
                 }
             ).random()
         }
+    }
+
+    val supportedDevices by lazy {
+        connectedDevices
+            .asSequence()
+            .map { SupportedDevice(it.type, it.family, it.type.img) }
+            .toSet()
+            .toList()
     }
 }

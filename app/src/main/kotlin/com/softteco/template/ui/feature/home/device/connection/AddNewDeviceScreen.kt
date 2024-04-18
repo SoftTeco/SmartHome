@@ -1,11 +1,13 @@
 package com.softteco.template.ui.feature.home.device.connection
 
+import android.content.res.Configuration.ORIENTATION_PORTRAIT
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -28,6 +30,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -71,22 +74,48 @@ private fun ScreenContent(
             modifier = Modifier.statusBarsPadding()
         )
 
-        Column(
-            Modifier.padding(start = PaddingDefault, top = PaddingNormal, end = PaddingDefault),
-            verticalArrangement = Arrangement.spacedBy(PaddingNormal)
-        ) {
+        val orientation = LocalContext.current.resources.configuration.orientation
+        val arrangement = Arrangement.spacedBy(PaddingNormal)
+        val paddingValues = PaddingValues(
+            start = PaddingDefault,
+            top = PaddingNormal,
+            end = PaddingDefault
+        )
+
+        val modes: @Composable () -> Unit = {
+            val modeModifier =
+                if (orientation == ORIENTATION_PORTRAIT) Modifier else Modifier.weight(1f)
+
             Mode(
                 titleRes = R.string.add_device_scan_qr_title,
                 subtitleRes = R.string.add_device_scan_qr_subtitle,
                 imageRes = R.drawable.scan,
-                onClick = onScanClick
+                onClick = onScanClick,
+                modifier = modeModifier
             )
             Mode(
                 titleRes = R.string.add_device_manual_selection_title,
                 subtitleRes = R.string.add_device_manual_selection_subtitle,
                 imageRes = R.drawable.devices,
                 onClick = onManualClick,
+                modifier = modeModifier
             )
+        }
+
+        if (orientation == ORIENTATION_PORTRAIT) {
+            Column(
+                Modifier.padding(paddingValues),
+                verticalArrangement = arrangement,
+            ) {
+                modes()
+            }
+        } else {
+            Row(
+                Modifier.padding(paddingValues),
+                horizontalArrangement = arrangement,
+            ) {
+                modes()
+            }
         }
     }
 }

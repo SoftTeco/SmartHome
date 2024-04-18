@@ -88,5 +88,14 @@
 
     <!-- Manual Selection screen -->
     <string name="manual_selection_title">Manual Selection</string>
+    <string name="manual_search_placeholder">Device type or family</string>
 
+    <!-- Device family -->
+    <string name="sensor">Sensor</string>
+    <string name="cleaning">Cleaning</string>
+
+    <!-- Device type -->
+    <string name="temperature_and_humidity">Temperature and Humidity Monitor</string>
+    <string name="robot_vacuum_mop">Robot Vacuum-Mop</string>
+    <string name="washing_machine">Washing Machine</string>
 </resources>

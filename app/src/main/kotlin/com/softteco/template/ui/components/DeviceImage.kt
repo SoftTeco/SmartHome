@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -25,6 +26,7 @@ import com.softteco.template.ui.theme.AppTheme
 internal fun DeviceImage(
     imageUri: String,
     modifier: Modifier = Modifier,
+    name: String? = null,
     respectCacheHeaders: Boolean = false,
 ) {
     Surface(
@@ -48,6 +50,13 @@ internal fun DeviceImage(
         }
 
         Box(contentAlignment = Alignment.Center) {
+            name?.let {
+                Text(
+                    "${it.first()}",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                )
+            }
             Image(
                 painter = painter,
                 contentDescription = stringResource(R.string.avatar),
@@ -64,7 +73,8 @@ private fun Preview() {
     AppTheme {
         DeviceImage(
             imageUri = "https://i.pravatar.cc/300",
-            Modifier.size(48.dp)
+            Modifier.size(48.dp),
+            name = "Device"
         )
     }
 }

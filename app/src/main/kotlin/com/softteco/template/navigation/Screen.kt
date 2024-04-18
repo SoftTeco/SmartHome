@@ -2,7 +2,11 @@ package com.softteco.template.navigation
 
 sealed class Screen(val route: String) {
     data object Home : Screen("home")
+
     data object AddNewDevice : Screen("add_new_device")
+    data object ScanQR : Screen("scan_qr")
+    data object ManualSelection : Screen("manual_selection")
+
     data object Search : Screen("search")
     data object Notifications : Screen("notifications")
 

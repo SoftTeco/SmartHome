@@ -1,11 +1,11 @@
 <img src="app/src/main/ic_launcher-playstore.png" alt="icon" width="100"/>
 
-# Template
+# Smart Home 
 ![test workflow](https://github.com/SoftTeco/AndroidBLE/actions/workflows/test.yml/badge.svg)
 [![codecov](https://codecov.io/gh/SoftTeco/AndroidBLE/graph/badge.svg)](https://codecov.io/gh/SoftTeco/AndroidBLE)
 ![lint workflow](https://github.com/SoftTeco/AndroidBLE/actions/workflows/lint.yml/badge.svg)
 
-Sample application to demonstrate usage of Jetpack Compose, Kotlin Flow, Android Hilt, etc.
+Application for controlling home automation devices via ZigBee network.
 
 ## Overview
 

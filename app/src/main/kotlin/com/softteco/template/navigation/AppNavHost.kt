@@ -18,6 +18,9 @@ import com.softteco.template.navigation.AppNavHost.DEEP_LINK_URI
 import com.softteco.template.navigation.AppNavHost.RESET_PASSWORD_PATH
 import com.softteco.template.navigation.AppNavHost.RESET_TOKEN_ARG
 import com.softteco.template.ui.feature.home.HomeScreen
+import com.softteco.template.ui.feature.home.device.connection.AddNewDeviceScreen
+import com.softteco.template.ui.feature.home.notifications.NotificationsScreen
+import com.softteco.template.ui.feature.home.search.SearchScreen
 import com.softteco.template.ui.feature.onboarding.login.LoginScreen
 import com.softteco.template.ui.feature.onboarding.password.forgot.ForgotPasswordScreen
 import com.softteco.template.ui.feature.onboarding.password.reset.ResetPasswordScreen
@@ -47,6 +50,7 @@ fun AppNavHost(
         bottomBarGraph(navController, Modifier.padding(paddingValues))
         loginGraph(navController, Modifier.padding(paddingValues))
         settingsGraph(navController, Modifier.padding(paddingValues))
+        homeGraph(navController)
     }
 
     RemoveDeepLink()
@@ -61,7 +65,13 @@ fun NavGraphBuilder.bottomBarGraph(
         route = Graph.BottomBar.route
     ) {
         composable(Screen.Home.route) {
-            HomeScreen(modifier = modifier)
+            HomeScreen(
+                modifier = modifier,
+                onAddNewClick = { navController.navigate(Screen.AddNewDevice.route) },
+                onSearchClick = { navController.navigate(Screen.Search.route) },
+                onNotificationsClick = { navController.navigate(Screen.Notifications.route) },
+                onDeviceClick = { /*TODO*/ },
+            )
         }
         composable(Screen.Profile.route) {
             ProfileScreen(
@@ -151,6 +161,23 @@ fun NavGraphBuilder.settingsGraph(navController: NavController, modifier: Modifi
                 onBackClicked = { navController.navigateUp() },
                 modifier = modifier,
             )
+        }
+    }
+}
+
+fun NavGraphBuilder.homeGraph(navController: NavController, modifier: Modifier = Modifier) {
+    navigation(
+        startDestination = Screen.Home.route,
+        route = Graph.Home.route
+    ) {
+        composable(Screen.AddNewDevice.route) {
+            AddNewDeviceScreen(onBackClicked = { navController.navigateUp() }, modifier)
+        }
+        composable(Screen.Search.route) {
+            SearchScreen(onBackClicked = { navController.navigateUp() }, modifier)
+        }
+        composable(Screen.Notifications.route) {
+            NotificationsScreen(onBackClicked = { navController.navigateUp() }, modifier)
         }
     }
 }

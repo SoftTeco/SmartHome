@@ -10,13 +10,21 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.navArgument
 import androidx.navigation.navDeepLink
 import androidx.navigation.navigation
+import com.softteco.template.data.device.Device.Type.RobotVacuum
+import com.softteco.template.data.device.Device.Type.TemperatureAndHumidity
 import com.softteco.template.navigation.AppNavHost.DEEP_LINK_URI
+import com.softteco.template.navigation.AppNavHost.DEVICE_ID_KEY
 import com.softteco.template.navigation.AppNavHost.RESET_PASSWORD_PATH
 import com.softteco.template.navigation.AppNavHost.RESET_TOKEN_ARG
+import com.softteco.template.ui.feature.deviceDashboard.deviceSettings.DeviceSettingsScreen
+import com.softteco.template.ui.feature.deviceDashboard.devices.robotVacuum.RobotVacuumDashboardScreen
+import com.softteco.template.ui.feature.deviceDashboard.devices.thermometer.ThermometerDashboardScreen
 import com.softteco.template.ui.feature.forgotPassword.ForgotPasswordScreen
 import com.softteco.template.ui.feature.home.HomeScreen
 import com.softteco.template.ui.feature.home.device.connection.AddNewDeviceScreen
@@ -36,6 +44,7 @@ object AppNavHost {
     const val DEEP_LINK_URI = "https://template.softteco.com.deep_link"
     const val RESET_PASSWORD_PATH = "reset_password"
     const val RESET_TOKEN_ARG = "token"
+    const val DEVICE_ID_KEY = "device_id"
 }
 
 @Composable
@@ -73,7 +82,18 @@ fun NavGraphBuilder.bottomBarGraph(
                 onAddNewClick = { navController.navigate(Screen.AddNewDevice.route) },
                 onSearchClick = { navController.navigate(Screen.Search.route) },
                 onNotificationsClick = { navController.navigate(Screen.Notifications.route) },
-                onDeviceClick = { /*TODO*/ },
+                onDeviceClick = { device ->
+                    val deviceId = device.id.toString()
+                    when (device.type) {
+                        TemperatureAndHumidity -> {
+                            navController.navigate(Screen.ThermometerDashboard.createRoute(deviceId))
+                        }
+                        RobotVacuum -> {
+                            navController.navigate(Screen.RobotVacuumDashboard.createRoute(deviceId))
+                        }
+                        else -> { /*TODO*/ }
+                    }
+                }
             )
         }
         composable(Screen.Profile.route) {
@@ -200,6 +220,39 @@ fun NavGraphBuilder.homeGraph(navController: NavController, modifier: Modifier =
         }
         composable(Screen.Notifications.route) {
             NotificationsScreen(onBackClicked = { navController.navigateUp() }, modifier)
+        }
+        composable(
+            route = Screen.ThermometerDashboard.route,
+            arguments = listOf(navArgument(DEVICE_ID_KEY) { type = NavType.StringType })
+        ) {
+            ThermometerDashboardScreen(
+                onSettingsClick = { deviceId ->
+                    navController.navigate(Screen.DeviceSettings.createRoute(deviceId))
+                },
+                onBackClicked = { navController.navigateUp() },
+                modifier = modifier,
+            )
+        }
+        composable(
+            route = Screen.RobotVacuumDashboard.route,
+            arguments = listOf(navArgument(DEVICE_ID_KEY) { type = NavType.StringType })
+        ) {
+            RobotVacuumDashboardScreen(
+                onSettingsClick = { deviceId ->
+                    navController.navigate(Screen.DeviceSettings.createRoute(deviceId))
+                },
+                onBackClicked = { navController.navigateUp() },
+                modifier = modifier,
+            )
+        }
+        composable(
+            route = Screen.DeviceSettings.route,
+            arguments = listOf(navArgument(DEVICE_ID_KEY) { type = NavType.StringType })
+        ) {
+            DeviceSettingsScreen(
+                onBackClicked = { navController.navigateUp() },
+                modifier = modifier,
+            )
         }
     }
 }

@@ -98,4 +98,7 @@
     <string name="temperature_and_humidity">Temperature and Humidity Monitor</string>
     <string name="robot_vacuum_mop">Robot Vacuum-Mop</string>
     <string name="washing_machine">Washing Machine</string>
+
+    <!-- Device dashboard screen -->
+    <string name="device_settings">Device settings</string>
 </resources>

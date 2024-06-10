@@ -1,5 +1,7 @@
 package com.softteco.template.navigation
 
+import com.softteco.template.navigation.AppNavHost.DEVICE_ID_KEY
+
 sealed class Screen(val route: String) {
     data object Home : Screen("home")
 
@@ -18,4 +20,16 @@ sealed class Screen(val route: String) {
     data object ResetPassword : Screen("reset_password")
     data object ForgotPassword : Screen("forgot_password")
     data object OpenSourceLicenses : Screen("open_source_licenses")
+
+    data object ThermometerDashboard : Screen("thermometer_dashboard/{$DEVICE_ID_KEY}") {
+        fun createRoute(deviceId: String) = "thermometer_dashboard/$deviceId"
+    }
+
+    data object RobotVacuumDashboard : Screen("robot_vacuum_dashboard/{$DEVICE_ID_KEY}") {
+        fun createRoute(deviceId: String) = "robot_vacuum_dashboard/$deviceId"
+    }
+
+    data object DeviceSettings : Screen("device_settings/{$DEVICE_ID_KEY}") {
+        fun createRoute(deviceId: String) = "device_settings/$deviceId"
+    }
 }

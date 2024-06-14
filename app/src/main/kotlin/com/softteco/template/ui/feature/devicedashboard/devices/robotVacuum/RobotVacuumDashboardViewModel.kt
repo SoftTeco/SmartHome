@@ -1,18 +1,19 @@
-package com.softteco.template.ui.feature.deviceDashboard.deviceSettings
+package com.softteco.template.ui.feature.devicedashboard.devices.robotVacuum
 
 import androidx.compose.runtime.Immutable
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
-import com.softteco.template.navigation.AppNavHost
+import com.softteco.template.navigation.AppNavHost.DEVICE_ID_KEY
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import javax.inject.Inject
 
 @HiltViewModel
-class DeviceSettingsViewModel @Inject constructor(
-    savedStateHandle: SavedStateHandle
+class RobotVacuumDashboardViewModel @Inject constructor(
+    savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
-    private val deviceId = checkNotNull(savedStateHandle.get<String>(AppNavHost.DEVICE_ID_KEY))
+
+    private val deviceId = checkNotNull(savedStateHandle.get<String>(DEVICE_ID_KEY))
 
     val state = MutableStateFlow(State(deviceId))
 

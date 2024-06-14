@@ -1,5 +1,7 @@
 package com.softteco.template.data.di
 
+import com.softteco.template.data.device.ThermometerRepository
+import com.softteco.template.data.device.ThermometerRepositoryImpl
 import com.softteco.template.data.profile.ProfileRepository
 import com.softteco.template.data.profile.ProfileRepositoryImpl
 import dagger.Binds
@@ -13,4 +15,7 @@ internal interface RepositoryModule {
 
     @Binds
     fun bindFeature1Repository(impl: ProfileRepositoryImpl): ProfileRepository
+
+    @Binds
+    fun bindThermometerRepository(impl: ThermometerRepositoryImpl): ThermometerRepository
 }

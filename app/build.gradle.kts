@@ -141,6 +141,9 @@ dependencies {
     implementation(libs.androidx.appcompat)
     implementation(libs.play.services.oss.licenses)
 
+    implementation(libs.vico.compose.m3)
+    implementation(libs.vico.core)
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.test.ext.junit)
     androidTestImplementation(libs.androidx.test.espresso.core)

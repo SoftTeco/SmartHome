@@ -99,6 +99,10 @@
     <string name="robot_vacuum_mop">Robot Vacuum-Mop</string>
     <string name="washing_machine">Washing Machine</string>
 
+    <!-- Device model -->
+    <string name="temperature_and_humidity_LYWSD03MMC">LYWSD03MMC</string>
+    <string name="unknown">Unknown</string>
+
     <!-- Device dashboard screen -->
     <string name="device_settings">Device settings</string>
     <string name="temperature">Temperature</string>
@@ -109,4 +113,16 @@
     <string name="hour">Hour</string>
     <string name="day">Day</string>
     <string name="month">Month</string>
+
+    <!-- Bluetooth screen -->
+    <string name="bluetooth_notification_channel_id" translatable="false">bluetooth_default_channel</string>
+    <string name="bluetooth_icon_description">Baseline_bluetooth_24</string>
+    <string name="signal_level_icon_description">Baseline_signal_level_24</string>
+    <string name="device_name">LYWSD03MMC</string>
+    <string name="show_only_thermometers">Show only thermometers</string>
+    <string name="connect">Connect</string>
+    <string name="disconnect">Disconnect</string>
+    <string name="bluetooth_connection_is_running">Bluetooth connection is running</string>
+    <string name="bluetooth_connection_active">Bluetooth connection is active</string>
+    <string name="bluetooth_connection">Bluetooth connection</string>
 </resources>

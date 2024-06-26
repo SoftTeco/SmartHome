@@ -10,6 +10,9 @@ import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.preferencesDataStoreFile
+import com.softteco.template.data.base.ProfileDataBase
+import com.softteco.template.data.base.dao.DevicesDao
+import com.softteco.template.data.base.dao.ThermometerDataDao
 import com.softteco.template.data.profile.dto.AuthTokenDto
 import com.softteco.template.data.profile.dto.ProfileDto
 import com.softteco.template.utils.AuthTokenSerializer
@@ -72,4 +75,22 @@ object DataStoreModule {
             produceFile = { appContext.preferencesDataStoreFile(PREFERENCES) }
         )
     }
+
+    @Provides
+    @JvmStatic
+    @Singleton
+    fun provideDataBase(@ApplicationContext appContext: Context): ProfileDataBase =
+        ProfileDataBase.getInstance(appContext)
+
+    @Provides
+    @JvmStatic
+    @Singleton
+    fun provideBluetoothDevicesDao(dataBase: ProfileDataBase): DevicesDao =
+        dataBase.devicesDao()
+
+    @Provides
+    @JvmStatic
+    @Singleton
+    fun provideMeasurementDao(dataBase: ProfileDataBase): ThermometerDataDao =
+        dataBase.thermometerDataDao()
 }

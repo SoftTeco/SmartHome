@@ -12,9 +12,11 @@ object PreviewStub {
                 Device.Basic(
                     type = Device.Type.TemperatureAndHumidity,
                     family = Device.Family.Sensor,
+                    model = Device.Model.LYWSD03MMC,
                     id = UUID.randomUUID(),
                     defaultName = "Temperature and Humidity Monitor",
                     name = "Temperature and Humidity Monitor",
+                    macAddress = "00:00:00:00:00",
                     img = "file:///android_asset/icon/temperature_monitor.webp",
                     location = "Bedroom",
                 ),
@@ -22,17 +24,21 @@ object PreviewStub {
                     id = UUID.randomUUID(),
                     defaultName = "Washing Machine",
                     name = "Washing Machine",
+                    macAddress = "00:00:00:00:00",
                     img = "file:///android_asset/icon/washing_machine.webp",
                     location = "Kitchen",
                     type = Device.Type.WashingMachine,
-                    family = Device.Family.Cleaning
+                    family = Device.Family.Cleaning,
+                    model = Device.Model.Unknown
                 ),
                 object : Device.QuickAccess {
                     override val type = Device.Type.RobotVacuum
                     override val family = Device.Family.Cleaning
+                    override val model = Device.Model.Unknown
                     override val id = UUID.randomUUID()
                     override val defaultName = "Robot Vacuum-Mop"
                     override val name = "Robot Vacuum-Mop"
+                    override val macAddress = "00:00:00:00:00"
                     override val img =
                         "file:///android_asset/icon/robot_vacuum.webp"
                     override val location = "Living room"
@@ -48,7 +54,7 @@ object PreviewStub {
     val supportedDevices by lazy {
         connectedDevices
             .asSequence()
-            .map { SupportedDevice(it.type, it.family, it.type.img) }
+            .map { SupportedDevice(it.type, it.family, it.model, it.type.img) }
             .toSet()
             .toList()
     }

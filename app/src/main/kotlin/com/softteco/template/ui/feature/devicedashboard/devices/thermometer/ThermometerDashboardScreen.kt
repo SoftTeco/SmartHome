@@ -21,10 +21,12 @@ import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -33,7 +35,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.softteco.template.R
-import com.softteco.template.data.device.Thermometer
+import com.softteco.template.data.device.ThermometerData
 import com.softteco.template.ui.components.DashboardValueBlock
 import com.softteco.template.ui.components.DateTimeChart
 import com.softteco.template.ui.components.DeviceDashboardTopAppBar
@@ -43,6 +45,7 @@ import com.softteco.template.ui.feature.devicedashboard.devices.thermometer.Ther
 import com.softteco.template.ui.feature.devicedashboard.devices.thermometer.ThermometerDashboardViewModel.TimeIntervalMenu
 import com.softteco.template.ui.theme.AppTheme
 import com.softteco.template.ui.theme.Dimens
+import kotlinx.coroutines.launch
 
 @Composable
 fun ThermometerDashboardScreen(
@@ -52,6 +55,7 @@ fun ThermometerDashboardScreen(
     viewModel: ThermometerDashboardViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
+
     ScreenContent(
         state,
         updateCurrentMeasurement = { unit, type -> viewModel.getCurrentMeasurement(unit, type) },
@@ -59,6 +63,7 @@ fun ThermometerDashboardScreen(
         onSettingsClick = onSettingsClick,
         modifier = modifier,
         onBackClicked = onBackClicked,
+        viewModel = viewModel
     )
 }
 
@@ -71,6 +76,7 @@ private fun ScreenContent(
     updateThermometerHistoryByInterval: (unit: TimeIntervalMenu, type: MeasurementType) -> Unit,
     modifier: Modifier = Modifier,
     onBackClicked: () -> Unit,
+    viewModel: ThermometerDashboardViewModel
 ) {
     Column(
         modifier = modifier
@@ -82,9 +88,23 @@ private fun ScreenContent(
         var chartType by remember { mutableStateOf(TEMPERATURE) }
         var previousChartType by remember { mutableStateOf(chartType) }
         var timeIntervalMenu by rememberSaveable { mutableStateOf(TimeIntervalMenu.Minute) }
+
+        val scope = rememberCoroutineScope()
+
+        LaunchedEffect(Unit) {
+            viewModel.onDeviceResultCallback {
+                scope.launch {
+                    updateCurrentMeasurement(timeIntervalMenu, chartType)
+                    if (previousChartType != chartType) {
+                        updateThermometerHistoryByInterval(timeIntervalMenu, chartType)
+                        previousChartType = chartType
+                    }
+                }
+            }
+        }
         DeviceDashboardTopAppBar(
             state.thermometer.deviceName,
-            onSettingsClick = { onSettingsClick(state.thermometer.deviceId) },
+            onSettingsClick = { onSettingsClick(state.thermometer.deviceId.toString()) },
             modifier = Modifier.fillMaxWidth(),
             onBackClicked = onBackClicked
         )
@@ -112,7 +132,7 @@ private fun ScreenContent(
             )
 
             DashboardValueBlock(
-                value = state.thermometer.currentHumidity.toInt(),
+                value = state.thermometer.currentHumidity,
                 valueName = stringResource(R.string.humidity),
                 measurementUnit = stringResource(R.string.percent_icon),
                 icon = Icons.Outlined.WaterDrop,
@@ -199,11 +219,12 @@ private fun Chart(
 private fun Preview() {
     AppTheme {
         ScreenContent(
-            state = ThermometerDashboardViewModel.State(thermometer = Thermometer("111", "name")),
+            state = ThermometerDashboardViewModel.State(thermometer = ThermometerData()),
             updateCurrentMeasurement = { _, _ -> },
             onSettingsClick = {},
             updateThermometerHistoryByInterval = { _, _ -> },
             onBackClicked = {},
+            viewModel = hiltViewModel()
         )
     }
 }

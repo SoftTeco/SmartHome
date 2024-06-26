@@ -20,7 +20,16 @@ class ManualSelectionViewModel @Inject constructor() : ViewModel() {
     )
     val navDestination = _navDestination.asSharedFlow()
 
-    private val supportedDevices = MutableStateFlow<List<SupportedDevice>>(emptyList())
+    private val supportedDevices = MutableStateFlow(
+        listOf(
+            SupportedDevice(
+                com.softteco.template.data.device.Device.Type.TemperatureAndHumidity,
+                com.softteco.template.data.device.Device.Family.Sensor,
+                com.softteco.template.data.device.Device.Model.LYWSD03MMC,
+                "file:///android_asset/icon/temperature_monitor.webp"
+            )
+        )
+    )
 
     val state = MutableStateFlow(State(supportedDevices.value))
 

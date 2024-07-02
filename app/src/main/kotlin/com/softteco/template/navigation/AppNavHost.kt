@@ -25,7 +25,6 @@ import com.softteco.template.navigation.AppNavHost.RESET_TOKEN_ARG
 import com.softteco.template.ui.feature.devicedashboard.devices.robotVacuum.RobotVacuumDashboardScreen
 import com.softteco.template.ui.feature.devicedashboard.devices.thermometer.ThermometerDashboardScreen
 import com.softteco.template.ui.feature.devicedashboard.devicesettings.DeviceSettingsScreen
-import com.softteco.template.ui.feature.forgotPassword.ForgotPasswordScreen
 import com.softteco.template.ui.feature.home.HomeScreen
 import com.softteco.template.ui.feature.home.device.connection.AddNewDeviceScreen
 import com.softteco.template.ui.feature.home.device.connection.ScanQRScreen

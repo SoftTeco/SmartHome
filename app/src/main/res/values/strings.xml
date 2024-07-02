@@ -101,4 +101,12 @@
 
     <!-- Device dashboard screen -->
     <string name="device_settings">Device settings</string>
+    <string name="temperature">Temperature</string>
+    <string name="humidity">Humidity</string>
+    <string name="degrees_celsius_icon"> °C</string>
+    <string name="percent_icon"> %</string>
+    <string name="minute">Minute</string>
+    <string name="hour">Hour</string>
+    <string name="day">Day</string>
+    <string name="month">Month</string>
 </resources>

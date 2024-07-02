@@ -1,4 +1,4 @@
-package com.softteco.template.ui.feature.deviceDashboard.devices.robotVacuum
+package com.softteco.template.ui.feature.devicedashboard.devices.robotVacuum
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement

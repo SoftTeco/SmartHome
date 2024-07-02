@@ -22,9 +22,9 @@ import com.softteco.template.navigation.AppNavHost.DEEP_LINK_URI
 import com.softteco.template.navigation.AppNavHost.DEVICE_ID_KEY
 import com.softteco.template.navigation.AppNavHost.RESET_PASSWORD_PATH
 import com.softteco.template.navigation.AppNavHost.RESET_TOKEN_ARG
-import com.softteco.template.ui.feature.deviceDashboard.deviceSettings.DeviceSettingsScreen
-import com.softteco.template.ui.feature.deviceDashboard.devices.robotVacuum.RobotVacuumDashboardScreen
-import com.softteco.template.ui.feature.deviceDashboard.devices.thermometer.ThermometerDashboardScreen
+import com.softteco.template.ui.feature.devicedashboard.devices.robotVacuum.RobotVacuumDashboardScreen
+import com.softteco.template.ui.feature.devicedashboard.devices.thermometer.ThermometerDashboardScreen
+import com.softteco.template.ui.feature.devicedashboard.devicesettings.DeviceSettingsScreen
 import com.softteco.template.ui.feature.forgotPassword.ForgotPasswordScreen
 import com.softteco.template.ui.feature.home.HomeScreen
 import com.softteco.template.ui.feature.home.device.connection.AddNewDeviceScreen

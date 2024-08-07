@@ -1,4 +1,4 @@
-package com.softteco.template.data.base.model
+package com.softteco.template.data.device.model
 
 import androidx.room.ColumnInfo
 import androidx.room.Entity
@@ -7,7 +7,6 @@ import androidx.room.Index
 import androidx.room.PrimaryKey
 import com.softteco.template.data.device.ThermometerData
 import com.softteco.template.data.device.ThermometerValues
-import java.util.UUID
 
 private const val DATABASE_ID = 0L
 
@@ -38,7 +37,7 @@ data class ThermometerDataDb(
 
     constructor(entity: ThermometerData) : this(
         DATABASE_ID,
-        entity.deviceId.toString(),
+        entity.deviceId,
         entity.deviceName,
         entity.macAddress,
         entity.valuesHistory.map { ThermometerValuesDb(it as ThermometerValues.DataLYWSD03MMC) }
@@ -46,7 +45,7 @@ data class ThermometerDataDb(
 
     override fun toEntity(): ThermometerData {
         return ThermometerData(
-            deviceId = UUID.fromString(deviceId),
+            deviceId = deviceId,
             deviceName = deviceName,
             macAddress = macAddress,
             valuesHistory = valuesHistory.map { it.toEntity() }

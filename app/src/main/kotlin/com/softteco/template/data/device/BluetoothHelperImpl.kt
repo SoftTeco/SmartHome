@@ -1,4 +1,4 @@
-package com.softteco.template.utils.bluetooth
+package com.softteco.template.data.device
 
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
@@ -25,10 +25,9 @@ import com.softteco.template.data.bluetooth.BluetoothByteParser
 import com.softteco.template.data.bluetooth.BluetoothHelper
 import com.softteco.template.data.bluetooth.BluetoothPermissionChecker
 import com.softteco.template.data.bluetooth.BluetoothState
-import com.softteco.template.data.device.Device
-import com.softteco.template.data.device.ThermometerData
-import com.softteco.template.data.device.ThermometerRepository
-import com.softteco.template.data.device.ThermometerValues
+import com.softteco.template.utils.bluetooth.BluetoothDeviceConnectionService
+import com.softteco.template.utils.bluetooth.BluetoothDeviceConnectionStatus
+import com.softteco.template.utils.bluetooth.getBluetoothDeviceModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
@@ -362,7 +361,7 @@ internal class BluetoothHelperImpl @Inject constructor(
                             thermometerRepository.saveDevice(device)
                             thermometerRepository.saveThermometerData(
                                 ThermometerData(
-                                    deviceId = device.id,
+                                    deviceId = device.id.toString(),
                                     deviceName = device.name,
                                     macAddress = device.macAddress
                                 )

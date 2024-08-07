@@ -10,21 +10,19 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Card
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
@@ -33,6 +31,7 @@ import com.softteco.template.ui.components.CustomTopAppBar
 import com.softteco.template.ui.components.DeviceImage
 import com.softteco.template.ui.components.OnLifecycleEvent
 import com.softteco.template.ui.components.PrimaryButton
+import com.softteco.template.ui.theme.AppTheme
 import com.softteco.template.ui.theme.Dimens
 import com.softteco.template.utils.bluetooth.BluetoothDeviceConnectionStatus
 import com.softteco.template.utils.bluetooth.getBluetoothDeviceModel
@@ -45,32 +44,11 @@ fun BluetoothScreen(
     viewModel: BluetoothViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsState()
-    val deviceName = stringResource(R.string.temperature_and_humidity_LYWSD03MMC)
 
     LaunchedEffect(Unit) {
-        viewModel.filteredName = deviceName
-        viewModel.onScanCallback {
-            viewModel.emitDeviceConnectionStatusList()
-            viewModel.addScanResult(it)
-        }
-        viewModel.onConnectCallback {
-            viewModel.emitDeviceConnectionStatusList()
-        }
-
-        viewModel.onDisconnectCallback {
-            viewModel.emitDeviceConnectionStatusList()
-        }
-
-        viewModel.onBluetoothModuleChangeStateCallback {
-            if (!it) {
-                viewModel.clearScanResult()
-            }
-        }
+        viewModel.initCallbacks(state.deviceName)
     }
 
-    val onFilter: (checked: Boolean) -> Unit = {
-        viewModel.setFiltered(it)
-    }
     ScreenContent(
         state = state,
         onItemClicked = { bluetoothDevice ->
@@ -80,7 +58,6 @@ fun BluetoothScreen(
         onSetCurrentlyViewedBluetoothDeviceAddress = { bluetoothDeviceAddress ->
             viewModel.setCurrentlyViewedBluetoothDeviceAddress(bluetoothDeviceAddress)
         },
-        onFilter,
         modifier = modifier
     )
     OnLifecycleEvent { owner, event ->
@@ -105,7 +82,6 @@ private fun ScreenContent(
     onItemClicked: (BluetoothDevice) -> Unit,
     onShowChart: () -> Unit,
     onSetCurrentlyViewedBluetoothDeviceAddress: (String) -> Unit,
-    onFilter: (checked: Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier.fillMaxSize()) {
@@ -113,40 +89,12 @@ private fun ScreenContent(
             stringResource(id = R.string.temperature_and_humidity),
             modifier = Modifier.fillMaxWidth()
         )
-        BluetoothDevicesSwitch(onFilter)
         BluetoothDevicesList(
             devices = state.devices,
             devicesConnectionStatusList = state.devicesConnectionStatusList,
             onItemClicked = onItemClicked,
             onShowChart = onShowChart,
             onSetCurrentlyViewedBluetoothDeviceAddress = onSetCurrentlyViewedBluetoothDeviceAddress
-        )
-    }
-}
-
-@Composable
-fun BluetoothDevicesSwitch(
-    onFilter: (checked: Boolean) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    var checked by remember { mutableStateOf(true) }
-    Row(
-        modifier = modifier.padding(start = Dimens.PaddingDefault)
-    ) {
-        Text(
-            modifier = Modifier
-                .align(alignment = Alignment.CenterVertically)
-                .padding(end = Dimens.PaddingSmall),
-            text = stringResource(id = R.string.show_only_thermometers),
-            overflow = TextOverflow.Ellipsis,
-            maxLines = 1
-        )
-        Switch(
-            checked = checked,
-            onCheckedChange = {
-                checked = it
-                onFilter.invoke(checked)
-            }
         )
     }
 }
@@ -161,18 +109,16 @@ fun BluetoothDevicesList(
     modifier: Modifier = Modifier
 ) {
     LazyColumn(modifier = modifier.fillMaxSize()) {
-        devices.forEach { device ->
-            item {
-                devicesConnectionStatusList.forEach {
-                    if (it.bluetoothDevice.macAddress == device.address) {
-                        BluetoothDeviceCard(
-                            bluetoothDevice = device,
-                            connectionStatus = it.isConnected,
-                            onItemClicked = onItemClicked,
-                            onShowChart = onShowChart,
-                            onSetCurrentlyViewedBluetoothDeviceAddress = onSetCurrentlyViewedBluetoothDeviceAddress
-                        )
-                    }
+        items(devices) { device ->
+            devicesConnectionStatusList.forEach {
+                if (it.bluetoothDevice.macAddress == device.address) {
+                    BluetoothDeviceCard(
+                        bluetoothDevice = device,
+                        connectionStatus = it.isConnected,
+                        onItemClicked = onItemClicked,
+                        onShowChart = onShowChart,
+                        onSetCurrentlyViewedBluetoothDeviceAddress = onSetCurrentlyViewedBluetoothDeviceAddress
+                    )
                 }
             }
         }
@@ -239,5 +185,18 @@ fun BluetoothDeviceCard(
                 onClick = { onItemClicked(bluetoothDevice) },
             )
         }
+    }
+}
+
+@Preview
+@Composable
+private fun Preview() {
+    AppTheme {
+        ScreenContent(
+            state = BluetoothViewModel.State(),
+            onItemClicked = {},
+            onShowChart = {},
+            onSetCurrentlyViewedBluetoothDeviceAddress = {}
+        )
     }
 }

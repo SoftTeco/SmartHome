@@ -1,10 +1,10 @@
-package com.softteco.template.data.base.dao
+package com.softteco.template.data.device.dao
 
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
-import com.softteco.template.data.base.model.DeviceDb
+import com.softteco.template.data.device.model.DeviceDb
 import kotlinx.coroutines.flow.Flow
 
 @Dao

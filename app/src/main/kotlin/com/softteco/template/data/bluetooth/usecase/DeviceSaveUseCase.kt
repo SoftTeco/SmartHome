@@ -1,7 +1,7 @@
 package com.softteco.template.data.bluetooth.usecase
 
-import com.softteco.template.data.base.model.DeviceDb
 import com.softteco.template.data.bluetooth.DevicesCacheStore
+import com.softteco.template.data.device.model.DeviceDb
 import javax.inject.Inject
 
 class DeviceSaveUseCase @Inject constructor(

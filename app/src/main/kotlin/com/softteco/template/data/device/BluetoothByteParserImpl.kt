@@ -1,9 +1,8 @@
-package com.softteco.template.utils.bluetooth
+package com.softteco.template.data.device
 
 import com.softteco.template.Constants
 import com.softteco.template.data.bluetooth.BluetoothByteParser
-import com.softteco.template.data.device.Device
-import com.softteco.template.data.device.ThermometerValues
+import com.softteco.template.utils.bluetooth.characteristicByteConversation
 import javax.inject.Inject
 import javax.inject.Singleton
 

@@ -2,15 +2,15 @@ package com.softteco.template.data.device
 
 import com.softteco.template.data.base.error.AppError
 import com.softteco.template.data.base.error.Result
-import com.softteco.template.data.base.model.DeviceDb
-import com.softteco.template.data.base.model.ThermometerDataDb
-import com.softteco.template.data.base.model.ThermometerValuesDb
 import com.softteco.template.data.bluetooth.usecase.DeviceSaveUseCase
 import com.softteco.template.data.bluetooth.usecase.DevicesGetUseCase
 import com.softteco.template.data.bluetooth.usecase.ThermometerDataGetUseCase
 import com.softteco.template.data.bluetooth.usecase.ThermometerDataSaveUseCase
 import com.softteco.template.data.bluetooth.usecase.ThermometerValuesGetUseCase
 import com.softteco.template.data.bluetooth.usecase.ThermometerValuesSaveUseCase
+import com.softteco.template.data.device.model.DeviceDb
+import com.softteco.template.data.device.model.ThermometerDataDb
+import com.softteco.template.data.device.model.ThermometerValuesDb
 import kotlinx.coroutines.flow.first
 import timber.log.Timber
 import java.time.LocalDateTime

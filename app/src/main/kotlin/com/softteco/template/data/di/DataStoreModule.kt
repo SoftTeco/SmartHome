@@ -10,9 +10,9 @@ import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.preferencesDataStoreFile
-import com.softteco.template.data.base.ProfileDataBase
-import com.softteco.template.data.base.dao.DevicesDao
-import com.softteco.template.data.base.dao.ThermometerDataDao
+import com.softteco.template.data.device.ProfileDataBase
+import com.softteco.template.data.device.dao.DevicesDao
+import com.softteco.template.data.device.dao.ThermometerDataDao
 import com.softteco.template.data.profile.dto.AuthTokenDto
 import com.softteco.template.data.profile.dto.ProfileDto
 import com.softteco.template.utils.AuthTokenSerializer

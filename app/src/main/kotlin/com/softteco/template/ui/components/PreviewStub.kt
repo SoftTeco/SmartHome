@@ -2,7 +2,7 @@ package com.softteco.template.ui.components
 
 import com.softteco.template.R
 import com.softteco.template.data.device.Device
-import com.softteco.template.data.device.SupportedDevice
+import com.softteco.template.data.device.SupportedDevices
 import java.util.UUID
 
 object PreviewStub {
@@ -54,7 +54,7 @@ object PreviewStub {
     val supportedDevices by lazy {
         connectedDevices
             .asSequence()
-            .map { SupportedDevice(it.type, it.family, it.model, it.type.img) }
+            .map { SupportedDevices.LYWSD03MMC }
             .toSet()
             .toList()
     }

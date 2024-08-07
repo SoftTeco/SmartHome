@@ -1,6 +1,6 @@
 package com.softteco.template.data.bluetooth
 
-import com.softteco.template.data.base.model.DeviceDb
+import com.softteco.template.data.device.model.DeviceDb
 import kotlinx.coroutines.flow.Flow
 
 interface DevicesCacheStore {

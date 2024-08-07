@@ -100,3 +100,14 @@ data class SupportedDevice(
     val model: Device.Model,
     val img: String,
 )
+
+enum class SupportedDevices(val supportedDevice: SupportedDevice) {
+    LYWSD03MMC(
+        SupportedDevice(
+            Device.Type.TemperatureAndHumidity,
+            Device.Family.Sensor,
+            Device.Model.LYWSD03MMC,
+            "file:///android_asset/icon/temperature_monitor.webp"
+        )
+    )
+}

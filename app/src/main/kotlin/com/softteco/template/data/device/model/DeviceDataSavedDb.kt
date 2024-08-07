@@ -1,4 +1,4 @@
-package com.softteco.template.data.base.model
+package com.softteco.template.data.device.model
 
 import com.softteco.template.data.device.Device
 

@@ -1,9 +1,9 @@
-package com.softteco.template.utils.bluetooth
+package com.softteco.template.data.device
 
-import com.softteco.template.data.base.dao.ThermometerDataDao
-import com.softteco.template.data.base.model.ThermometerDataDb
-import com.softteco.template.data.base.model.ThermometerValuesDb
 import com.softteco.template.data.bluetooth.DevicesDataCacheStore
+import com.softteco.template.data.device.dao.ThermometerDataDao
+import com.softteco.template.data.device.model.ThermometerDataDb
+import com.softteco.template.data.device.model.ThermometerValuesDb
 import javax.inject.Inject
 import javax.inject.Singleton
 

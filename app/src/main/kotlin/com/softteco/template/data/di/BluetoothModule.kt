@@ -5,11 +5,11 @@ import com.softteco.template.data.bluetooth.BluetoothHelper
 import com.softteco.template.data.bluetooth.BluetoothPermissionChecker
 import com.softteco.template.data.bluetooth.DevicesCacheStore
 import com.softteco.template.data.bluetooth.DevicesDataCacheStore
-import com.softteco.template.utils.bluetooth.BluetoothByteParserImpl
-import com.softteco.template.utils.bluetooth.BluetoothHelperImpl
-import com.softteco.template.utils.bluetooth.BluetoothPermissionCheckerImpl
-import com.softteco.template.utils.bluetooth.DevicesCacheStoreImpl
-import com.softteco.template.utils.bluetooth.DevicesDataCacheStoreImpl
+import com.softteco.template.data.device.BluetoothByteParserImpl
+import com.softteco.template.data.device.BluetoothHelperImpl
+import com.softteco.template.data.device.BluetoothPermissionCheckerImpl
+import com.softteco.template.data.device.DevicesCacheStoreImpl
+import com.softteco.template.data.device.DevicesDataCacheStoreImpl
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn

@@ -1,14 +1,14 @@
-package com.softteco.template.data.base
+package com.softteco.template.data.device
 
 import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
-import com.softteco.template.data.base.dao.DevicesDao
-import com.softteco.template.data.base.dao.ThermometerDataDao
-import com.softteco.template.data.base.model.DeviceDb
-import com.softteco.template.data.base.model.ThermometerDataDb
-import com.softteco.template.data.base.model.ThermometerValuesDb
+import com.softteco.template.data.device.dao.DevicesDao
+import com.softteco.template.data.device.dao.ThermometerDataDao
+import com.softteco.template.data.device.model.DeviceDb
+import com.softteco.template.data.device.model.ThermometerDataDb
+import com.softteco.template.data.device.model.ThermometerValuesDb
 
 @Database(
     entities = [
@@ -41,7 +41,6 @@ abstract class ProfileDataBase : RoomDatabase() {
                 ProfileDataBase::class.java,
                 DATABASE_NAME
             )
-                .allowMainThreadQueries()
                 .build()
         }
     }

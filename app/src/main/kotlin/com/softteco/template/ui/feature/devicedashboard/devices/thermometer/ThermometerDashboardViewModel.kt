@@ -48,7 +48,7 @@ class ThermometerDashboardViewModel @Inject constructor(
         emptyMap()
     )
 
-    private val thermometer = MutableStateFlow(ThermometerData())
+    private val thermometer = MutableStateFlow(ThermometerData("", "", ""))
 
     private val bottomAxisValueFormatter = MutableStateFlow(
         CartesianValueFormatter { x, chartValues, _ ->
@@ -211,7 +211,7 @@ class ThermometerDashboardViewModel @Inject constructor(
 
     @Immutable
     data class State(
-        val thermometer: ThermometerData = ThermometerData(),
+        val thermometer: ThermometerData = ThermometerData("", "", ""),
         val bottomAxisValueFormatter: CartesianValueFormatter = CartesianValueFormatter { x, chartValues, _ ->
             val dateTime = chartValues.model.extraStore[xToDateMapKeyLocalDateTime][x]
             if (dateTime != null) {

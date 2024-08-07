@@ -1,7 +1,7 @@
 package com.softteco.template.data.bluetooth
 
-import com.softteco.template.data.base.model.ThermometerDataDb
-import com.softteco.template.data.base.model.ThermometerValuesDb
+import com.softteco.template.data.device.model.ThermometerDataDb
+import com.softteco.template.data.device.model.ThermometerValuesDb
 
 interface DevicesDataCacheStore {
 

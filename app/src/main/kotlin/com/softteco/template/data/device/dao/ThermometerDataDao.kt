@@ -1,11 +1,11 @@
-package com.softteco.template.data.base.dao
+package com.softteco.template.data.device.dao
 
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
-import com.softteco.template.data.base.model.ThermometerDataDb
-import com.softteco.template.data.base.model.ThermometerValuesDb
+import com.softteco.template.data.device.model.ThermometerDataDb
+import com.softteco.template.data.device.model.ThermometerValuesDb
 
 @Dao
 interface ThermometerDataDao {

@@ -218,7 +218,7 @@ private fun Chart(
 private fun Preview() {
     AppTheme {
         ScreenContent(
-            state = ThermometerDashboardViewModel.State(thermometer = ThermometerData()),
+            state = ThermometerDashboardViewModel.State(thermometer = ThermometerData("", "", "")),
             updateCurrentMeasurement = { _, _ -> },
             onSettingsClick = {},
             updateThermometerHistoryByInterval = { _, _ -> },

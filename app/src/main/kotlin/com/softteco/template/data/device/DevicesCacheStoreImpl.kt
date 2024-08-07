@@ -1,8 +1,8 @@
-package com.softteco.template.utils.bluetooth
+package com.softteco.template.data.device
 
-import com.softteco.template.data.base.dao.DevicesDao
-import com.softteco.template.data.base.model.DeviceDb
 import com.softteco.template.data.bluetooth.DevicesCacheStore
+import com.softteco.template.data.device.dao.DevicesDao
+import com.softteco.template.data.device.model.DeviceDb
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 import javax.inject.Singleton

@@ -2,6 +2,7 @@ package com.softteco.template.utils
 
 import java.time.Instant
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
@@ -36,4 +37,7 @@ object DateUtils {
         val formatter = DateTimeFormatter.ISO_LOCAL_DATE
         return LocalDate.parse(date, formatter).toString()
     }
+
+    fun stringToLocalDateTime(timestamp: String): LocalDateTime =
+        LocalDateTime.parse(timestamp, DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSS"))
 }

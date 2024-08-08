@@ -17,14 +17,14 @@ import com.softteco.template.R
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DeviceDashboardTopAppBar(
-    title: String,
+    title: String?,
     onSettingsClick: () -> Unit,
     modifier: Modifier = Modifier,
     onBackClicked: () -> Unit = {},
 ) {
     TopAppBar(
         modifier = modifier,
-        title = { Text(text = title, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+        title = { Text(text = title ?: "", maxLines = 1, overflow = TextOverflow.Ellipsis) },
         navigationIcon = {
             IconButton(onClick = { onBackClicked() }) {
                 Icon(

@@ -11,6 +11,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowCompat
+import com.softteco.template.data.bluetooth.BluetoothHelper
 import com.softteco.template.navigation.Graph
 import com.softteco.template.ui.AppContent
 import com.softteco.template.ui.components.dialog.DialogController
@@ -30,9 +31,13 @@ class MainActivity : ComponentActivity() {
     @Inject
     lateinit var dialogController: DialogController
 
+    @Inject
+    lateinit var bluetoothHelper: BluetoothHelper
+
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
+        bluetoothHelper.init(this)
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
         setContent {
@@ -65,5 +70,10 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        bluetoothHelper.drop()
     }
 }

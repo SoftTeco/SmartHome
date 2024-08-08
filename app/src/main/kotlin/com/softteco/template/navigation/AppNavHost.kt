@@ -20,8 +20,10 @@ import com.softteco.template.data.device.Device.Type.RobotVacuum
 import com.softteco.template.data.device.Device.Type.TemperatureAndHumidity
 import com.softteco.template.navigation.AppNavHost.DEEP_LINK_URI
 import com.softteco.template.navigation.AppNavHost.DEVICE_ID_KEY
+import com.softteco.template.navigation.AppNavHost.DEVICE_NAME_KEY
 import com.softteco.template.navigation.AppNavHost.RESET_PASSWORD_PATH
 import com.softteco.template.navigation.AppNavHost.RESET_TOKEN_ARG
+import com.softteco.template.ui.feature.bluetooth.BluetoothScreen
 import com.softteco.template.ui.feature.devicedashboard.devices.robotVacuum.RobotVacuumDashboardScreen
 import com.softteco.template.ui.feature.devicedashboard.devices.thermometer.ThermometerDashboardScreen
 import com.softteco.template.ui.feature.devicedashboard.devicesettings.DeviceSettingsScreen
@@ -45,6 +47,7 @@ object AppNavHost {
     const val RESET_PASSWORD_PATH = "reset_password"
     const val RESET_TOKEN_ARG = "token"
     const val DEVICE_ID_KEY = "device_id"
+    const val DEVICE_NAME_KEY = "device_name"
 }
 
 @Composable
@@ -88,10 +91,13 @@ fun NavGraphBuilder.bottomBarGraph(
                         TemperatureAndHumidity -> {
                             navController.navigate(Screen.ThermometerDashboard.createRoute(deviceId))
                         }
+
                         RobotVacuum -> {
                             navController.navigate(Screen.RobotVacuumDashboard.createRoute(deviceId))
                         }
-                        else -> { /*TODO*/ }
+
+                        else -> { /*TODO*/
+                        }
                     }
                 }
             )
@@ -204,11 +210,13 @@ fun NavGraphBuilder.homeGraph(navController: NavController, modifier: Modifier =
         composable(Screen.ScanQR.route) {
             ScanQRScreen(onBackClicked = { navController.navigateUp() }, modifier)
         }
-        composable(Screen.ManualSelection.route) {
+        composable(
+            Screen.ManualSelection.route
+        ) {
             ManualSelectionScreen(
                 onBackClicked = { navController.navigateUp() },
                 onSearchClick = { navController.navigate(Screen.SearchDevice.route) },
-                onDeviceClick = { /*TODO*/ },
+                onDeviceClick = { _, name -> navController.navigate(Screen.Bluetooth.createRoute(name)) },
                 modifier
             )
         }
@@ -225,6 +233,15 @@ fun NavGraphBuilder.homeGraph(navController: NavController, modifier: Modifier =
         }
         composable(Screen.Notifications.route) {
             NotificationsScreen(onBackClicked = { navController.navigateUp() }, modifier)
+        }
+        composable(
+            route = Screen.Bluetooth.route,
+            arguments = listOf(navArgument(DEVICE_NAME_KEY) { type = NavType.StringType })
+        ) {
+            BluetoothScreen(
+                modifier = modifier,
+                onOpenDashboard = { navController.navigate(Screen.ThermometerDashboard.route) },
+            )
         }
         composable(
             route = Screen.ThermometerDashboard.route,

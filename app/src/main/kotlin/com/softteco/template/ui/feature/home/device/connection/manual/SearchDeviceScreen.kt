@@ -43,6 +43,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.softteco.template.R
 import com.softteco.template.data.device.Device.Family.Cleaning.getName
 import com.softteco.template.data.device.SupportedDevice
+import com.softteco.template.data.device.SupportedDevices
 import com.softteco.template.ui.components.DeviceImage
 import com.softteco.template.ui.components.PreviewStub.supportedDevices
 import com.softteco.template.ui.theme.AppTheme
@@ -106,7 +107,7 @@ private fun ScreenContent(
             )
 
             val context = LocalContext.current
-            var searchResult by remember { mutableStateOf(emptyList<SupportedDevice>()) }
+            var searchResult by remember { mutableStateOf(emptyList<SupportedDevices>()) }
 
             LaunchedEffect(query) {
                 queryFlow.value = query
@@ -164,27 +165,30 @@ private fun Device(device: SupportedDevice, modifier: Modifier = Modifier) {
 
 @Composable
 private fun SearchResult(
-    devices: List<SupportedDevice>,
+    devices: List<SupportedDevices>,
     onDeviceClick: (SupportedDevice) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     LazyColumn(modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = PaddingNormal)) {
         items(devices) { device ->
-            Device(device, Modifier.clickable { onDeviceClick(device) })
+            Device(
+                device.supportedDevice,
+                Modifier.clickable { onDeviceClick(device.supportedDevice) }
+            )
         }
     }
 }
 
-private fun List<SupportedDevice>.applyQuery(
+private fun List<SupportedDevices>.applyQuery(
     query: String,
     context: Context
-): List<SupportedDevice> {
+): List<SupportedDevices> {
     if (query.isBlank()) return emptyList()
 
     return this
-        .map { device -> device.type.getName(context) to device }
+        .map { device -> device.supportedDevice.type.getName(context) to device }
         .filter { typeDevicePair ->
-            val family = typeDevicePair.second.family.getName(context)
+            val family = typeDevicePair.second.supportedDevice.family.getName(context)
             query.trim().lowercase().let { query ->
                 query in typeDevicePair.first.lowercase() || query in family.lowercase()
             }

@@ -1,6 +1,7 @@
 package com.softteco.template.navigation
 
 import com.softteco.template.navigation.AppNavHost.DEVICE_ID_KEY
+import com.softteco.template.navigation.AppNavHost.DEVICE_NAME_KEY
 
 sealed class Screen(val route: String) {
     data object Home : Screen("home")
@@ -31,5 +32,9 @@ sealed class Screen(val route: String) {
 
     data object DeviceSettings : Screen("device_settings/{$DEVICE_ID_KEY}") {
         fun createRoute(deviceId: String) = "device_settings/$deviceId"
+    }
+
+    data object Bluetooth : Screen("bluetooth/{$DEVICE_NAME_KEY}") {
+        fun createRoute(deviceName: String) = "bluetooth/$deviceName"
     }
 }

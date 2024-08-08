@@ -42,6 +42,23 @@ android {
     buildTypes {
 
         val envBaseUrl = "\"${System.getenv("BASE_URL")}\""
+        val envBluetoothServiceUUID = "\"${System.getenv("BLUETOOTH_SERVICE_UUID_VALUE")}\""
+        val envBluetoothCharacteristicUUID =
+            "\"${System.getenv("BLUETOOTH_CHARACTERISTIC_UUID_VALUE")}\""
+        val envBluetoothDescriptorUUID =
+            "\"${System.getenv("BLUETOOTH_DESCRIPTOR_UUID_VALUE")}\""
+        val bluetoothServiceUUID = gradleLocalProperties(rootDir).getProperty(
+            "BLUETOOTH_SERVICE_UUID_VALUE",
+            envBluetoothServiceUUID
+        )
+        val bluetoothCharacteristicUUID = gradleLocalProperties(rootDir).getProperty(
+            "BLUETOOTH_CHARACTERISTIC_UUID_VALUE",
+            envBluetoothCharacteristicUUID
+        )
+        val bluetoothDescriptorUUID = gradleLocalProperties(rootDir).getProperty(
+            "BLUETOOTH_DESCRIPTOR_UUID_VALUE",
+            envBluetoothDescriptorUUID
+        )
         val baseUrl = gradleLocalProperties(rootDir).getProperty("BASE_URL", envBaseUrl)
 
         release {
@@ -53,10 +70,32 @@ android {
             isDebuggable = false
             buildConfigField("String", "BASE_URL", baseUrl)
             buildConfigField("String", "GOOGLE_SERVICES_JSON", "\"{}\"")
+            buildConfigField("String", "BLUETOOTH_SERVICE_UUID_VALUE", bluetoothServiceUUID)
+            buildConfigField(
+                "String",
+                "BLUETOOTH_CHARACTERISTIC_UUID_VALUE",
+                bluetoothCharacteristicUUID
+            )
+            buildConfigField(
+                "String",
+                "BLUETOOTH_DESCRIPTOR_UUID_VALUE",
+                bluetoothDescriptorUUID
+            )
         }
         debug {
             isDebuggable = true
             buildConfigField("String", "BASE_URL", baseUrl)
+            buildConfigField("String", "BLUETOOTH_SERVICE_UUID_VALUE", bluetoothServiceUUID)
+            buildConfigField(
+                "String",
+                "BLUETOOTH_CHARACTERISTIC_UUID_VALUE",
+                bluetoothCharacteristicUUID
+            )
+            buildConfigField(
+                "String",
+                "BLUETOOTH_DESCRIPTOR_UUID_VALUE",
+                bluetoothDescriptorUUID
+            )
             // disabled because of unit tests errors,
             // could be restored after running instrumentation tests on CI, and fixing unit tests errors
             // enableAndroidTestCoverage = true
@@ -144,6 +183,8 @@ dependencies {
 
     implementation(libs.vico.compose.m3)
     implementation(libs.vico.core)
+
+    implementation(libs.nordicSemiScanner)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.test.ext.junit)

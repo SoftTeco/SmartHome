@@ -56,7 +56,7 @@ import java.time.temporal.ChronoUnit
 
 @Composable
 fun DateTimeChart(
-    values: Map<LocalDateTime, Float>,
+    values: Map<LocalDateTime, Float>?,
     bottomAxisValueFormatter: CartesianValueFormatter,
     timeUnit: ChronoUnit,
     @StringRes yAxisTitle: Int,
@@ -66,7 +66,7 @@ fun DateTimeChart(
 
     LaunchedEffect(values) {
         withContext(Dispatchers.Default) {
-            if (values.isNotEmpty()) {
+            if (values?.isNotEmpty() == true) {
                 val minDateTime = values.keys.minOrNull() ?: LocalDateTime.now()
 
                 val xToDates = values.keys.associateBy {

@@ -53,16 +53,16 @@ interface ThermometerDataDao {
     fun insertOrUpdate(thermometerValues: ThermometerValuesDb): Long
 
     @Query("SELECT * FROM thermometerData WHERE macAddress = :macAddress")
-    fun getThermometerData(macAddress: String?): ThermometerDataDb
+    fun getThermometerData(macAddress: String): ThermometerDataDb
 
     @Query("SELECT * FROM thermometerValues WHERE macAddress = :macAddress")
-    fun getThermometerValues(macAddress: String?): List<ThermometerValuesDb>
+    fun getThermometerValues(macAddress: String): List<ThermometerValuesDb>
 
     @Query("SELECT * FROM thermometerValues WHERE macAddress = :macAddress ORDER BY timestamp DESC LIMIT 1")
-    fun getThermometerValue(macAddress: String?): ThermometerValuesDb
+    fun getThermometerValue(macAddress: String): ThermometerValuesDb
 
     @Query("DELETE FROM thermometerData WHERE macAddress = :macAddress")
-    fun deleteThermometerData(macAddress: String?): Int
+    fun deleteThermometerData(macAddress: String): Int
 
     @Query("DELETE FROM thermometerValues WHERE macAddress = :macAddress")
     fun deleteThermometerValues(macAddress: String?): Int

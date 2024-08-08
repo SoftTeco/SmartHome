@@ -48,7 +48,7 @@ class ThermometerDashboardViewModel @Inject constructor(
         emptyMap()
     )
 
-    private val thermometer = MutableStateFlow(ThermometerData(null, null, null))
+    private val thermometer = MutableStateFlow<ThermometerData?>(null)
 
     private val bottomAxisValueFormatter = MutableStateFlow(
         CartesianValueFormatter { x, chartValues, _ ->
@@ -98,8 +98,8 @@ class ThermometerDashboardViewModel @Inject constructor(
                             humidityHistory[it.timestamp] = it.humidity.toFloat()
                         }
                     }
-                    thermometer.value.temperatureHistory = temperatureHistory
-                    thermometer.value.humidityHistory = humidityHistory
+                    thermometer.value?.temperatureHistory = temperatureHistory
+                    thermometer.value?.humidityHistory = humidityHistory
                     fullTemperatureHistory.value = temperatureHistory
                     fullHumidityHistory.value = humidityHistory
                     loading.value = false
@@ -129,8 +129,8 @@ class ThermometerDashboardViewModel @Inject constructor(
             fullHistory
         }
         thermometer.value = when (type) {
-            MeasurementType.TEMPERATURE -> thermometer.value.copy(temperatureHistory = updatedHistory)
-            MeasurementType.HUMIDITY -> thermometer.value.copy(humidityHistory = updatedHistory)
+            MeasurementType.TEMPERATURE -> thermometer.value?.copy(temperatureHistory = updatedHistory)
+            MeasurementType.HUMIDITY -> thermometer.value?.copy(humidityHistory = updatedHistory)
         }
 
         bottomAxisValueFormatter.value = CartesianValueFormatter { x, chartValues, _ ->
@@ -172,13 +172,13 @@ class ThermometerDashboardViewModel @Inject constructor(
                         updatedHistory[now] = newMeasurementValue.toFloat()
 
                         val updatedThermometerData = when (measurementType) {
-                            MeasurementType.TEMPERATURE -> thermometer.value.copy(
+                            MeasurementType.TEMPERATURE -> thermometer.value?.copy(
                                 temperatureHistory = updatedHistory,
                                 currentTemperature = result.data.temperature,
                                 currentHumidity = result.data.humidity
                             )
 
-                            MeasurementType.HUMIDITY -> thermometer.value.copy(
+                            MeasurementType.HUMIDITY -> thermometer.value?.copy(
                                 humidityHistory = updatedHistory,
                                 currentTemperature = result.data.temperature,
                                 currentHumidity = result.data.humidity
@@ -211,7 +211,7 @@ class ThermometerDashboardViewModel @Inject constructor(
 
     @Immutable
     data class State(
-        val thermometer: ThermometerData = ThermometerData("", "", ""),
+        val thermometer: ThermometerData? = null,
         val bottomAxisValueFormatter: CartesianValueFormatter = CartesianValueFormatter { x, chartValues, _ ->
             val dateTime = chartValues.model.extraStore[xToDateMapKeyLocalDateTime][x]
             if (dateTime != null) {

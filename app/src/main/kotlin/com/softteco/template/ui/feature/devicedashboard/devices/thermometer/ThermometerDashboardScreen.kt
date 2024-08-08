@@ -35,7 +35,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.softteco.template.R
-import com.softteco.template.data.device.ThermometerData
 import com.softteco.template.ui.components.DashboardValueBlock
 import com.softteco.template.ui.components.DateTimeChart
 import com.softteco.template.ui.components.DeviceDashboardTopAppBar
@@ -102,8 +101,8 @@ private fun ScreenContent(
             }
         }
         DeviceDashboardTopAppBar(
-            state.thermometer.deviceName,
-            onSettingsClick = { onSettingsClick(state.thermometer.deviceId.toString()) },
+            state.thermometer?.deviceName,
+            onSettingsClick = { onSettingsClick(state.thermometer?.deviceId.toString()) },
             modifier = Modifier.fillMaxWidth(),
             onBackClicked = onBackClicked
         )
@@ -113,7 +112,7 @@ private fun ScreenContent(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             DashboardValueBlock(
-                value = state.thermometer.currentTemperature,
+                value = state.thermometer?.currentTemperature,
                 valueName = stringResource(R.string.temperature),
                 measurementUnit = stringResource(R.string.degrees_celsius_icon),
                 icon = Icons.Filled.SevereCold,
@@ -131,7 +130,7 @@ private fun ScreenContent(
             )
 
             DashboardValueBlock(
-                value = state.thermometer.currentHumidity,
+                value = state.thermometer?.currentHumidity,
                 valueName = stringResource(R.string.humidity),
                 measurementUnit = stringResource(R.string.percent_icon),
                 icon = Icons.Outlined.WaterDrop,
@@ -196,14 +195,14 @@ private fun Chart(
             }
             if (chartType == TEMPERATURE) {
                 DateTimeChart(
-                    values = state.thermometer.temperatureHistory,
+                    values = state.thermometer?.temperatureHistory,
                     bottomAxisValueFormatter = state.bottomAxisValueFormatter,
                     timeUnit = timeIntervalMenu.chronoUnit,
                     yAxisTitle = R.string.temperature,
                 )
             } else {
                 DateTimeChart(
-                    values = state.thermometer.humidityHistory,
+                    values = state.thermometer?.humidityHistory,
                     bottomAxisValueFormatter = state.bottomAxisValueFormatter,
                     timeUnit = timeIntervalMenu.chronoUnit,
                     yAxisTitle = R.string.humidity,
@@ -218,7 +217,7 @@ private fun Chart(
 private fun Preview() {
     AppTheme {
         ScreenContent(
-            state = ThermometerDashboardViewModel.State(thermometer = ThermometerData("", "", "")),
+            state = ThermometerDashboardViewModel.State(thermometer = null),
             updateCurrentMeasurement = { _, _ -> },
             onSettingsClick = {},
             updateThermometerHistoryByInterval = { _, _ -> },

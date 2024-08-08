@@ -361,7 +361,7 @@ internal class BluetoothHelperImpl @Inject constructor(
                             thermometerRepository.saveDevice(device)
                             thermometerRepository.saveThermometerData(
                                 ThermometerData(
-                                    deviceId = device.id.toString(),
+                                    deviceId = device.id,
                                     deviceName = device.name,
                                     macAddress = device.macAddress
                                 )

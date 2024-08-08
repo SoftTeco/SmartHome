@@ -1,11 +1,12 @@
 package com.softteco.template.data.device
 
 import java.time.LocalDateTime
+import java.util.UUID
 
 data class ThermometerData(
-    val deviceId: String?,
-    val deviceName: String?,
-    val macAddress: String?,
+    val deviceId: UUID,
+    val deviceName: String,
+    val macAddress: String,
     var currentTemperature: Double = 0.0,
     var currentHumidity: Int = 0,
     val valuesHistory: List<ThermometerValues> = listOf(),

@@ -48,7 +48,7 @@ class ThermometerDashboardViewModel @Inject constructor(
         emptyMap()
     )
 
-    private val thermometer = MutableStateFlow(ThermometerData("", "", ""))
+    private val thermometer = MutableStateFlow(ThermometerData(null, null, null))
 
     private val bottomAxisValueFormatter = MutableStateFlow(
         CartesianValueFormatter { x, chartValues, _ ->

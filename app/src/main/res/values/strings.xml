@@ -115,7 +115,6 @@
     <string name="month">Month</string>
 
     <!-- Bluetooth screen -->
-    <string name="signal_level_icon_description">Baseline_signal_level_24</string>
     <string name="device_name">LYWSD03MMC</string>
     <string name="connect">Connect</string>
     <string name="disconnect">Disconnect</string>

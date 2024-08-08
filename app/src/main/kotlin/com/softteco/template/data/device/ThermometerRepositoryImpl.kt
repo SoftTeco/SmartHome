@@ -2,12 +2,8 @@ package com.softteco.template.data.device
 
 import com.softteco.template.data.base.error.AppError
 import com.softteco.template.data.base.error.Result
-import com.softteco.template.data.bluetooth.usecase.DeviceSaveUseCase
-import com.softteco.template.data.bluetooth.usecase.DevicesGetUseCase
-import com.softteco.template.data.bluetooth.usecase.ThermometerDataGetUseCase
-import com.softteco.template.data.bluetooth.usecase.ThermometerDataSaveUseCase
-import com.softteco.template.data.bluetooth.usecase.ThermometerValuesGetUseCase
-import com.softteco.template.data.bluetooth.usecase.ThermometerValuesSaveUseCase
+import com.softteco.template.data.bluetooth.DevicesCacheStore
+import com.softteco.template.data.bluetooth.DevicesDataCacheStore
 import com.softteco.template.data.device.model.DeviceDb
 import com.softteco.template.data.device.model.ThermometerDataDb
 import com.softteco.template.data.device.model.ThermometerValuesDb
@@ -19,19 +15,15 @@ import javax.inject.Singleton
 
 @Singleton
 internal class ThermometerRepositoryImpl @Inject constructor(
-    private val devicesGetUseCase: DevicesGetUseCase,
-    private val deviceSaveUseCase: DeviceSaveUseCase,
-    private val thermometerDataGetUseCase: ThermometerDataGetUseCase,
-    private val thermometerDataSaveUseCase: ThermometerDataSaveUseCase,
-    private val thermometerValuesGetUseCase: ThermometerValuesGetUseCase,
-    private val thermometerValuesSaveUseCase: ThermometerValuesSaveUseCase
+    private val devicesCacheStore: DevicesCacheStore,
+    private val devicesDataCacheStore: DevicesDataCacheStore,
 ) : ThermometerRepository {
 
     @Suppress("TooGenericExceptionCaught")
     override suspend fun getDevices(): Result<List<Device>> {
         return try {
             val savedBluetoothDevices = mutableListOf<Device>()
-            devicesGetUseCase.execute().first().forEach {
+            devicesCacheStore.getDevices().first().forEach {
                 savedBluetoothDevices.add(it.toEntity())
             }
             Result.Success(savedBluetoothDevices)
@@ -45,7 +37,7 @@ internal class ThermometerRepositoryImpl @Inject constructor(
     override suspend fun saveDevice(device: Device): Result<Long> {
         return try {
             Result.Success(
-                deviceSaveUseCase.execute(
+                devicesCacheStore.saveDevice(
                     DeviceDb(device as Device.Basic)
                 )
             )
@@ -58,7 +50,7 @@ internal class ThermometerRepositoryImpl @Inject constructor(
     @Suppress("TooGenericExceptionCaught")
     override suspend fun getThermometerData(macAddress: String): Result<ThermometerData> {
         return try {
-            Result.Success(thermometerDataGetUseCase.execute(macAddress).toEntity())
+            Result.Success(devicesDataCacheStore.getResource(macAddress).toEntity())
         } catch (e: Exception) {
             Timber.e(e)
             Result.Error(AppError.UnknownError())
@@ -69,7 +61,7 @@ internal class ThermometerRepositoryImpl @Inject constructor(
     override suspend fun saveThermometerData(thermometerData: ThermometerData): Result<Long> {
         return try {
             Result.Success(
-                thermometerDataSaveUseCase.execute(
+                devicesDataCacheStore.saveResource(
                     ThermometerDataDb(
                         ThermometerData(
                             deviceId = thermometerData.deviceId,
@@ -88,7 +80,7 @@ internal class ThermometerRepositoryImpl @Inject constructor(
     @Suppress("TooGenericExceptionCaught")
     override suspend fun getCurrentMeasurement(macAddress: String): Result<ThermometerValues> {
         return try {
-            Result.Success(thermometerValuesGetUseCase.execute(macAddress).toEntity())
+            Result.Success(devicesDataCacheStore.getThermometerValues(macAddress).toEntity())
         } catch (e: Exception) {
             Timber.e(e)
             Result.Error(AppError.UnknownError())
@@ -99,7 +91,7 @@ internal class ThermometerRepositoryImpl @Inject constructor(
     override suspend fun saveCurrentMeasurement(thermometerValues: ThermometerValues.DataLYWSD03MMC): Result<Long> {
         return try {
             Result.Success(
-                thermometerValuesSaveUseCase.execute(
+                devicesDataCacheStore.saveThermometerValues(
                     ThermometerValuesDb(
                         ThermometerValues.DataLYWSD03MMC(
                             thermometerValues.temperature,

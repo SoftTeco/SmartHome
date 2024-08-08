@@ -19,11 +19,11 @@ data class ThermometerDataDb(
     @ColumnInfo(name = "database_id")
     var databaseId: Long,
     @ColumnInfo(name = "deviceId")
-    var deviceId: String,
+    var deviceId: String?,
     @ColumnInfo(name = "deviceName")
-    var deviceName: String,
+    var deviceName: String?,
     @ColumnInfo(name = "macAddress")
-    var macAddress: String,
+    var macAddress: String?,
     @Ignore
     var valuesHistory: List<ThermometerValuesDb> = emptyList()
 ) : ThermometerDataSavedDb() {

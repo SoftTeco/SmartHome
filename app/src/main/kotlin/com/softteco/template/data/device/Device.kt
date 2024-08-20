@@ -11,22 +11,24 @@ interface Device {
     val defaultName: String
     val name: String
     val macAddress: String
-    val img: String
+    val img: String?
     val location: String
     val type: Type
     val family: Family
     val model: Model
+    val protocolType: ProtocolType
 
     data class Basic(
         override val id: UUID,
         override val defaultName: String,
         override val name: String,
         override val macAddress: String,
-        override val img: String,
+        override val img: String?,
         override val location: String,
         override val type: Type,
         override val family: Family,
-        override val model: Model
+        override val model: Model,
+        override val protocolType: ProtocolType
     ) : Device
 
     interface QuickAccess : Device {
@@ -86,7 +88,7 @@ interface Device {
 
         @Serializable
         data object Unknown :
-            Model(R.string.unknown, "file:///android_asset/icon/unknown_model.webp")
+            Model(R.string.unknown, "file:///android_asset/icon/unknown.webp")
 
         fun Model.getName(context: Context): String {
             return context.getString(nameRes)
@@ -110,4 +112,16 @@ enum class SupportedDevices(val supportedDevice: SupportedDevice) {
             "file:///android_asset/icon/temperature_monitor.webp"
         )
     )
+}
+
+enum class ProtocolType {
+    ZIGBEE,
+    BLUETOOTH,
+    UNKNOWN;
+
+    companion object {
+        fun fromString(typeName: String): ProtocolType? {
+            return entries.find { it.name.equals(typeName, ignoreCase = true) }
+        }
+    }
 }

@@ -3,7 +3,7 @@ package com.softteco.template.data.bluetooth
 import android.bluetooth.BluetoothAdapter
 import android.location.LocationManager
 import com.softteco.template.MainActivity
-import com.softteco.template.data.device.PermissionType
+import com.softteco.template.data.device.protocol.bluetooth.PermissionType
 
 interface BluetoothPermissionChecker {
     fun checkBluetoothSupport(

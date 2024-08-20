@@ -57,6 +57,7 @@ playServicesOssLicenses = "17.0.1"
 lifecycleRuntimeCompose = "2.7.0"
 vico = "2.0.0-alpha.21"
 nordicSemiScanner = "1.6.0"
+hannesaPaho = "4.2"
 
 [libraries]
 androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "ktx" }
@@ -97,6 +98,7 @@ play-services-oss-licenses = { module = "com.google.android.gms:play-services-os
 vico-compose-m3 = { group = "com.patrykandpatrick.vico", name = "compose-m3", version.ref = "vico" }
 vico-core = { group = "com.patrykandpatrick.vico", name = "core", version.ref = "vico" }
 nordicSemiScanner = { module = "no.nordicsemi.android.support.v18:scanner", version.ref = "nordicSemiScanner" }
+hannesaPaho = { module = "com.github.hannesa2:paho.mqtt.android", version.ref = "hannesaPaho" }
 
 junit = { module = "junit:junit", version.ref = "junit" }
 androidx-test-ext-junit = { module = "androidx.test.ext:junit", version.ref = "testExtJunit" }

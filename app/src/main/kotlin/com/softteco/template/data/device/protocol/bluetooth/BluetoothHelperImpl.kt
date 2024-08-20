@@ -1,4 +1,4 @@
-package com.softteco.template.data.device
+package com.softteco.template.data.device.protocol.bluetooth
 
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
@@ -25,10 +25,24 @@ import com.softteco.template.data.bluetooth.BluetoothByteParser
 import com.softteco.template.data.bluetooth.BluetoothHelper
 import com.softteco.template.data.bluetooth.BluetoothPermissionChecker
 import com.softteco.template.data.bluetooth.BluetoothState
-import com.softteco.template.utils.bluetooth.BluetoothDeviceConnectionService
-import com.softteco.template.utils.bluetooth.BluetoothDeviceConnectionStatus
-import com.softteco.template.utils.bluetooth.getBluetoothDeviceModel
+import com.softteco.template.data.device.Device
+import com.softteco.template.data.device.ProtocolType
+import com.softteco.template.data.device.ThermometerData
+import com.softteco.template.data.device.ThermometerRepository
+import com.softteco.template.data.device.ThermometerValues
+import com.softteco.template.utils.protocol.DeviceConnectionService
+import com.softteco.template.utils.protocol.DeviceConnectionStatus
+import com.softteco.template.utils.protocol.checkRemainingConnectionForService
+import com.softteco.template.utils.protocol.getDeviceImage
+import com.softteco.template.utils.protocol.getDeviceModel
+import com.softteco.template.utils.protocol.isServiceRunning
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import no.nordicsemi.android.support.v18.scanner.BluetoothLeScannerCompat
@@ -63,11 +77,11 @@ internal class BluetoothHelperImpl @Inject constructor(
     override var onBluetoothModuleChangeState: ((ifTurnOn: Boolean) -> Unit)? = null
     private var readCharacteristicTimestamp = 0L
 
-    @Volatile
-    private var currentlyViewedBluetoothDeviceAddress = ""
+    private val _deviceConnectionStatusList =
+        MutableStateFlow<Map<String, DeviceConnectionStatus>>(emptyMap())
+    private val deviceConnectionStatusList: StateFlow<Map<String, DeviceConnectionStatus>> =
+        _deviceConnectionStatusList
 
-    @Volatile
-    private var deviceConnectionStatusList = hashMapOf<String, BluetoothDeviceConnectionStatus>()
     private var connectedDevicesList = hashMapOf<String, BluetoothGatt>()
 
     private val scanCallback: ScanCallback = object : ScanCallback() {
@@ -77,21 +91,25 @@ internal class BluetoothHelperImpl @Inject constructor(
         ) {
             super.onScanResult(callbackType, scanResult)
             scanResult.device.name?.let {
-                deviceConnectionStatusList[scanResult.device.address] =
-                    BluetoothDeviceConnectionStatus(
-                        Device.Basic(
-                            type = Device.Type.TemperatureAndHumidity,
-                            family = Device.Family.Sensor,
-                            model = activity?.getBluetoothDeviceModel(it) ?: Device.Model.Unknown,
-                            id = UUID.randomUUID(),
-                            defaultName = it,
-                            name = "Temperature and Humidity Monitor",
-                            macAddress = scanResult.device.address,
-                            img = "",
-                            location = "",
-                        ),
-                        false
-                    )
+                _deviceConnectionStatusList.update { currentMap ->
+                    currentMap.toMutableMap().apply {
+                        this[scanResult.device.address] = DeviceConnectionStatus(
+                            Device.Basic(
+                                type = Device.Type.TemperatureAndHumidity,
+                                family = Device.Family.Sensor,
+                                model = activity?.getDeviceModel(it) ?: Device.Model.Unknown,
+                                id = UUID.randomUUID(),
+                                defaultName = it,
+                                name = "Temperature and Humidity Monitor",
+                                macAddress = scanResult.device.address,
+                                img = activity?.getDeviceImage(it),
+                                location = "",
+                                protocolType = ProtocolType.BLUETOOTH
+                            ),
+                            false
+                        )
+                    }
+                }
                 onScanResult?.invoke(scanResult)
             }
         }
@@ -117,12 +135,7 @@ internal class BluetoothHelperImpl @Inject constructor(
                     }
 
                     BluetoothAdapter.STATE_OFF -> {
-                        activity.stopService(
-                            Intent(
-                                activity,
-                                BluetoothDeviceConnectionService::class.java
-                            )
-                        )
+                        stopService()
                         stopScan()
                         onBluetoothModuleChangeState?.invoke(false)
                     }
@@ -138,7 +151,16 @@ internal class BluetoothHelperImpl @Inject constructor(
             withContext(Dispatchers.IO) {
                 when (val result = thermometerRepository.getDevices()) {
                     is Result.Success -> {
-                        savedBluetoothDevices.addAll(result.data)
+                        result.data.filter { it.protocolType == ProtocolType.BLUETOOTH }.let {
+                            savedBluetoothDevices.addAll(it)
+                            it.forEach {
+                                _deviceConnectionStatusList.update { currentMap ->
+                                    currentMap.toMutableMap().apply {
+                                        this[it.macAddress] = DeviceConnectionStatus(it, false)
+                                    }
+                                }
+                            }
+                        }
                     }
 
                     is Result.Error -> {}
@@ -148,11 +170,13 @@ internal class BluetoothHelperImpl @Inject constructor(
     }
 
     override fun drop() {
+        stopService()
+        unregisterReceiver()
         this.activity = null
     }
 
-    override fun provideConnectionToDevice(bluetoothDevice: BluetoothDevice) {
-        if (checkConnectedDevice(bluetoothDevice) == true) {
+    override suspend fun provideConnectionToDevice(bluetoothDevice: BluetoothDevice) {
+        if (checkConnectedDevice(bluetoothDevice)) {
             disconnectFromDevice(connectedDevicesList[bluetoothDevice.address])
         } else {
             bluetoothDevice.connectGatt(
@@ -164,6 +188,14 @@ internal class BluetoothHelperImpl @Inject constructor(
         }
     }
 
+    override fun provideConnectionToDeviceViaMacAddress(macAddress: String) {
+        bluetoothAdapter.getRemoteDevice(macAddress)?.let {
+            CoroutineScope(Dispatchers.IO).launch {
+                provideConnectionToDevice(it)
+            }
+        }
+    }
+
     override fun registerReceiver() {
         activity?.registerReceiver(
             bluetoothReceiver,
@@ -171,7 +203,6 @@ internal class BluetoothHelperImpl @Inject constructor(
         )
     }
 
-    @Suppress("TooGenericExceptionCaught")
     override fun unregisterReceiver() {
         try {
             activity?.unregisterReceiver(bluetoothReceiver)
@@ -184,28 +215,29 @@ internal class BluetoothHelperImpl @Inject constructor(
         BluetoothLeScannerCompat.getScanner().stopScan(scanCallback)
     }
 
-    private fun checkConnectedDevice(bluetoothDevice: BluetoothDevice) =
-        deviceConnectionStatusList[bluetoothDevice.address]?.isConnected
+    private suspend fun checkConnectedDevice(bluetoothDevice: BluetoothDevice): Boolean {
+        val statusMap = deviceConnectionStatusList.first()
+        return statusMap[bluetoothDevice.address]?.isConnected ?: false
+    }
 
     private val mGattCallback: BluetoothGattCallback = object : BluetoothGattCallback() {
         override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
             if (newState == BluetoothProfile.STATE_CONNECTED) {
                 provideConnectedState(gatt)
             }
-
             if (newState == BluetoothProfile.STATE_DISCONNECTED) {
                 gatt.let {
-                    deviceConnectionStatusList[it.device.address]?.isConnected = false
+                    _deviceConnectionStatusList.update { currentMap ->
+                        currentMap.toMutableMap().apply {
+                            this[it.device.address]?.let { status ->
+                                val updatedStatus = status.copy(isConnected = false)
+                                this[it.device.address] = updatedStatus
+                            }
+                        }
+                    }
                     it.close()
                     onDisconnect?.invoke()
-                    if (!checkRemainingConnectionForService()) {
-                        activity?.stopService(
-                            Intent(
-                                activity,
-                                BluetoothDeviceConnectionService::class.java
-                            )
-                        )
-                    }
+                    stopService()
                 }
             }
         }
@@ -243,6 +275,7 @@ internal class BluetoothHelperImpl @Inject constructor(
             return bluetoothGatt.writeDescriptor(descriptor)
         }
 
+        @Deprecated("Deprecated in Java")
         override fun onCharacteristicChanged(
             gatt: BluetoothGatt,
             characteristic: BluetoothGattCharacteristic
@@ -250,7 +283,7 @@ internal class BluetoothHelperImpl @Inject constructor(
             characteristic.value.let { characteristic ->
                 if (System.currentTimeMillis() - readCharacteristicTimestamp >= READ_BLUETOOTH_CHARACTERISTIC_DELAY) {
                     readCharacteristicTimestamp = System.currentTimeMillis()
-                    deviceConnectionStatusList[gatt.device.address]?.bluetoothDevice?.let { device ->
+                    _deviceConnectionStatusList.value[gatt.device.address]?.device?.let { device ->
                         val bluetoothDeviceData = bluetoothByteParser.parseBytes(
                             characteristic,
                             device.model
@@ -330,57 +363,58 @@ internal class BluetoothHelperImpl @Inject constructor(
         this.onBluetoothModuleChangeState = onBluetoothModuleChangeState
     }
 
-    override fun getDeviceConnectionStatusList() = deviceConnectionStatusList
-
-    override fun setCurrentlyViewedBluetoothDeviceAddress(macAddress: String) {
-        currentlyViewedBluetoothDeviceAddress = macAddress
-    }
-
-    override fun getCurrentlyViewedBluetoothDeviceAddress() = currentlyViewedBluetoothDeviceAddress
-
-    private fun checkRemainingConnectionForService(): Boolean {
-        var countConnection = 0
-        deviceConnectionStatusList.forEach {
-            if (it.value.isConnected) {
-                countConnection++
-            }
-        }
-        return countConnection == 1
-    }
+    override fun getObservableDeviceConnectionStatusList() = deviceConnectionStatusList
 
     private fun provideConnectedState(bluetoothGatt: BluetoothGatt) {
         bluetoothGatt.let {
             connectedDevicesList[it.device.address] = it
-            deviceConnectionStatusList[it.device.address]?.bluetoothDevice?.let { device ->
-                if (!savedBluetoothDevices.stream().filter { o: Device ->
-                    o.macAddress == it.device.address
-                }.findFirst().isPresent
-                ) {
-                    runBlocking {
-                        withContext(Dispatchers.IO) {
-                            thermometerRepository.saveDevice(device)
-                            thermometerRepository.saveThermometerData(
-                                ThermometerData(
-                                    deviceId = device.id,
-                                    deviceName = device.name,
-                                    macAddress = device.macAddress
-                                )
-                            )
+            _deviceConnectionStatusList.update { currentMap ->
+                currentMap.toMutableMap().apply {
+                    this[it.device.address]?.let { status ->
+                        val updatedStatus = status.copy(isConnected = true)
+                        this[it.device.address] = updatedStatus
+                        if (savedBluetoothDevices.none { o -> o.macAddress == it.device.address }) {
+                            runBlocking {
+                                withContext(Dispatchers.IO) {
+                                    thermometerRepository.saveDevice(status.device)
+                                    thermometerRepository.saveThermometerData(
+                                        ThermometerData(
+                                            deviceId = status.device.id,
+                                            deviceName = status.device.name,
+                                            macAddress = status.device.macAddress
+                                        )
+                                    )
+                                }
+                            }
                         }
                     }
                 }
             }
-            deviceConnectionStatusList[it.device.address]?.isConnected = true
             it.discoverServices()
             onConnect?.invoke()
-            if (checkRemainingConnectionForService()) {
+            if (!isServiceRunning(activity, DeviceConnectionService::class.java)) {
                 activity?.startForegroundService(
                     Intent(
                         activity,
-                        BluetoothDeviceConnectionService::class.java
+                        DeviceConnectionService::class.java
                     )
                 )
             }
+        }
+    }
+
+    private fun stopService() {
+        if (!checkRemainingConnectionForService(
+                getObservableDeviceConnectionStatusList(),
+                activity?.zigbeeHelper?.getObservableDeviceConnectionStatusList()
+            )
+        ) {
+            activity?.stopService(
+                Intent(
+                    activity,
+                    DeviceConnectionService::class.java
+                )
+            )
         }
     }
 }

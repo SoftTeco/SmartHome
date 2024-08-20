@@ -45,6 +45,7 @@ import com.softteco.template.data.device.Device
 import com.softteco.template.navigation.Screen
 import com.softteco.template.ui.components.DeviceImage
 import com.softteco.template.ui.components.PreviewStub
+import com.softteco.template.ui.components.ProtocolImage
 import com.softteco.template.ui.theme.AppTheme
 import com.softteco.template.ui.theme.Dimens.PaddingDefault
 import com.softteco.template.ui.theme.Dimens.PaddingNormal
@@ -66,7 +67,6 @@ fun HomeScreen(
 
     LaunchedEffect(Unit) {
         Analytics.homeOpened()
-
         viewModel.navDestination.onEach { screen ->
             when (screen) {
                 Screen.AddNewDevice -> onAddNewClick()
@@ -77,6 +77,8 @@ fun HomeScreen(
                 }
             }
         }.launchIn(this)
+        viewModel.getDeviceConnectionStatusList()
+        viewModel.getDevices()
     }
 
     ScreenContent(
@@ -84,8 +86,15 @@ fun HomeScreen(
         onAddNewClick,
         onSearchClick,
         onNotificationsClick,
-        onDeviceClick,
-        modifier,
+        { device ->
+            viewModel.performDeviceClick(
+                onDeviceClick,
+                state.devicesConnectionStatusList,
+                device
+            )
+        },
+        { device -> viewModel.isDeviceConnected(device, state.devicesConnectionStatusList) },
+        modifier
     )
 }
 
@@ -96,6 +105,7 @@ private fun ScreenContent(
     onSearchClick: () -> Unit,
     onNotificationsClick: () -> Unit,
     onDeviceClick: (Device) -> Unit,
+    checkConnectionStatus: (Device) -> Boolean?,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -122,7 +132,10 @@ private fun ScreenContent(
                 ),
             ) {
                 items(state.devices) {
-                    Device(it, onClick = { onDeviceClick(it) })
+                    Device(
+                        it,
+                        checkConnectionStatus(it),
+                        onClick = { onDeviceClick(it) })
                 }
             }
         } else {
@@ -182,15 +195,24 @@ private fun TopAppBar(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun Device(device: Device, onClick: () -> Unit, modifier: Modifier = Modifier) {
+private fun Device(
+    device: Device,
+    connectionStatus: Boolean?,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
     ElevatedCard(onClick = onClick, modifier = modifier) {
         Column(Modifier.padding(PaddingSmall)) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 DeviceImage(
                     imageUri = device.img,
                     Modifier.size(48.dp),
+                )
+                ProtocolImage(
+                    device,
+                    connectionStatus,
+                    Modifier.size(24.dp),
                 )
                 if (device is Device.QuickAccess) {
                     IconButton(onClick = device.onClickAction) {
@@ -232,7 +254,8 @@ private fun Preview() {
             onAddNewClick = {},
             onSearchClick = {},
             onNotificationsClick = {},
-            onDeviceClick = {}
+            onDeviceClick = {},
+            checkConnectionStatus = { null }
         )
     }
 }
@@ -246,7 +269,8 @@ private fun PreviewDevices() {
             onAddNewClick = {},
             onSearchClick = {},
             onNotificationsClick = {},
-            onDeviceClick = {}
+            onDeviceClick = {},
+            checkConnectionStatus = { null }
         )
     }
 }

@@ -34,10 +34,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
 import com.softteco.template.R
 import com.softteco.template.ui.components.DashboardValueBlock
 import com.softteco.template.ui.components.DateTimeChart
 import com.softteco.template.ui.components.DeviceDashboardTopAppBar
+import com.softteco.template.ui.components.OnLifecycleEvent
 import com.softteco.template.ui.feature.devicedashboard.devices.thermometer.ThermometerDashboardViewModel.MeasurementType
 import com.softteco.template.ui.feature.devicedashboard.devices.thermometer.ThermometerDashboardViewModel.MeasurementType.HUMIDITY
 import com.softteco.template.ui.feature.devicedashboard.devices.thermometer.ThermometerDashboardViewModel.MeasurementType.TEMPERATURE
@@ -64,6 +66,15 @@ fun ThermometerDashboardScreen(
         modifier = modifier,
         onBackClicked = onBackClicked
     )
+    OnLifecycleEvent { owner, event ->
+        when (event) {
+            Lifecycle.Event.ON_RESUME -> {
+                viewModel.getThermometerHistory()
+            }
+
+            else -> {}
+        }
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

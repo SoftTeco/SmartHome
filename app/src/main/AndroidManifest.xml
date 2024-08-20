@@ -39,6 +39,7 @@
             android:exported="true"
             android:theme="@style/AppTheme.Splash"
             android:allowTaskReparenting="false"
+            android:configChanges="orientation|screenSize"
             android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -63,7 +64,7 @@
             </intent-filter>
         </service>
         <service
-            android:name="com.softteco.template.utils.bluetooth.BluetoothDeviceConnectionService"
+            android:name="com.softteco.template.utils.protocol.DeviceConnectionService"
             android:enabled="true"
             android:exported="true"
             android:foregroundServiceType="connectedDevice">

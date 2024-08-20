@@ -2,6 +2,7 @@ package com.softteco.template.ui.components
 
 import com.softteco.template.R
 import com.softteco.template.data.device.Device
+import com.softteco.template.data.device.ProtocolType
 import com.softteco.template.data.device.SupportedDevices
 import java.util.UUID
 
@@ -19,6 +20,7 @@ object PreviewStub {
                     macAddress = "00:00:00:00:00",
                     img = "file:///android_asset/icon/temperature_monitor.webp",
                     location = "Bedroom",
+                    protocolType = ProtocolType.UNKNOWN
                 ),
                 Device.Basic(
                     id = UUID.randomUUID(),
@@ -29,7 +31,8 @@ object PreviewStub {
                     location = "Kitchen",
                     type = Device.Type.WashingMachine,
                     family = Device.Family.Cleaning,
-                    model = Device.Model.Unknown
+                    model = Device.Model.Unknown,
+                    protocolType = ProtocolType.UNKNOWN
                 ),
                 object : Device.QuickAccess {
                     override val type = Device.Type.RobotVacuum
@@ -42,6 +45,7 @@ object PreviewStub {
                     override val img =
                         "file:///android_asset/icon/robot_vacuum.webp"
                     override val location = "Living room"
+                    override val protocolType = ProtocolType.UNKNOWN
 
                     override val onClickAction = {}
                     override val actionIcon = R.drawable.outline_play_circle_24

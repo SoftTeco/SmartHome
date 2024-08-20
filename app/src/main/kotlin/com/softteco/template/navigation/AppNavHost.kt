@@ -20,13 +20,17 @@ import com.softteco.template.data.device.Device.Type.RobotVacuum
 import com.softteco.template.data.device.Device.Type.TemperatureAndHumidity
 import com.softteco.template.navigation.AppNavHost.DEEP_LINK_URI
 import com.softteco.template.navigation.AppNavHost.DEVICE_ID_KEY
+import com.softteco.template.navigation.AppNavHost.DEVICE_MAC_ADDRESS
 import com.softteco.template.navigation.AppNavHost.DEVICE_NAME_KEY
+import com.softteco.template.navigation.AppNavHost.DEVICE_PROTOCOL
 import com.softteco.template.navigation.AppNavHost.RESET_PASSWORD_PATH
 import com.softteco.template.navigation.AppNavHost.RESET_TOKEN_ARG
-import com.softteco.template.ui.feature.bluetooth.BluetoothScreen
+import com.softteco.template.ui.feature.deviceprotocol.bluetooth.BluetoothScreen
 import com.softteco.template.ui.feature.devicedashboard.devices.robotVacuum.RobotVacuumDashboardScreen
 import com.softteco.template.ui.feature.devicedashboard.devices.thermometer.ThermometerDashboardScreen
 import com.softteco.template.ui.feature.devicedashboard.devicesettings.DeviceSettingsScreen
+import com.softteco.template.ui.feature.deviceprotocol.zigbee.ZigBeeScreen
+import com.softteco.template.ui.feature.devicesearch.DeviceSearchScreen
 import com.softteco.template.ui.feature.home.HomeScreen
 import com.softteco.template.ui.feature.home.device.connection.AddNewDeviceScreen
 import com.softteco.template.ui.feature.home.device.connection.ScanQRScreen
@@ -48,6 +52,8 @@ object AppNavHost {
     const val RESET_TOKEN_ARG = "token"
     const val DEVICE_ID_KEY = "device_id"
     const val DEVICE_NAME_KEY = "device_name"
+    const val DEVICE_PROTOCOL = "device_protocol"
+    const val DEVICE_MAC_ADDRESS = "device_mac_address"
 }
 
 @Composable
@@ -87,9 +93,17 @@ fun NavGraphBuilder.bottomBarGraph(
                 onNotificationsClick = { navController.navigate(Screen.Notifications.route) },
                 onDeviceClick = { device ->
                     val deviceId = device.id.toString()
+                    val deviceProtocol = device.protocolType.toString()
+                    val deviceMacAddress = device.macAddress
                     when (device.type) {
                         TemperatureAndHumidity -> {
-                            navController.navigate(Screen.ThermometerDashboard.createRoute(deviceId))
+                            navController.navigate(
+                                Screen.ThermometerDashboard.createRoute(
+                                    deviceId,
+                                    deviceProtocol,
+                                    deviceMacAddress
+                                )
+                            )
                         }
 
                         RobotVacuum -> {
@@ -216,7 +230,13 @@ fun NavGraphBuilder.homeGraph(navController: NavController, modifier: Modifier =
             ManualSelectionScreen(
                 onBackClicked = { navController.navigateUp() },
                 onSearchClick = { navController.navigate(Screen.SearchDevice.route) },
-                onDeviceClick = { _, name -> navController.navigate(Screen.Bluetooth.createRoute(name)) },
+                onDeviceClick = { _, name ->
+                    navController.navigate(
+                        Screen.DeviceSearch.createRoute(
+                            name
+                        )
+                    )
+                },
                 modifier
             )
         }
@@ -238,14 +258,39 @@ fun NavGraphBuilder.homeGraph(navController: NavController, modifier: Modifier =
             route = Screen.Bluetooth.route,
             arguments = listOf(navArgument(DEVICE_NAME_KEY) { type = NavType.StringType })
         ) {
-            BluetoothScreen(
-                modifier = modifier,
-                onOpenDashboard = { navController.navigate(Screen.ThermometerDashboard.route) },
+            BluetoothScreen(onBackClicked = { navController.navigateUp() }, modifier)
+        }
+        composable(
+            route = Screen.ZigBee.route,
+            arguments = listOf(navArgument(DEVICE_NAME_KEY) { type = NavType.StringType })
+        ) {
+            ZigBeeScreen(onBackClicked = { navController.navigateUp() }, modifier)
+        }
+        composable(
+            route = Screen.DeviceSearch.route,
+            arguments = listOf(navArgument(DEVICE_NAME_KEY) { type = NavType.StringType })
+        ) {
+            DeviceSearchScreen(
+                onBackClicked = { navController.navigateUp() },
+                firstProtocolSelected = { deviceName ->
+                    navController.navigate(
+                        Screen.Bluetooth.createRoute(deviceName)
+                    )
+                },
+                secondProtocolSelected = { deviceName ->
+                    navController.navigate(
+                        Screen.ZigBee.createRoute(deviceName)
+                    )
+                },
+                modifier = modifier
             )
         }
         composable(
             route = Screen.ThermometerDashboard.route,
-            arguments = listOf(navArgument(DEVICE_ID_KEY) { type = NavType.StringType })
+            arguments = listOf(
+                navArgument(DEVICE_ID_KEY) { type = NavType.StringType },
+                navArgument(DEVICE_PROTOCOL) { type = NavType.StringType },
+                navArgument(DEVICE_MAC_ADDRESS) { type = NavType.StringType })
         ) {
             ThermometerDashboardScreen(
                 onSettingsClick = { deviceId ->

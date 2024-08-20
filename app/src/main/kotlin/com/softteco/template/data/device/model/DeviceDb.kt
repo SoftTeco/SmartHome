@@ -5,6 +5,7 @@ import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
 import com.softteco.template.data.device.Device
+import com.softteco.template.data.device.ProtocolType
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.util.UUID
@@ -28,7 +29,7 @@ data class DeviceDb(
     @ColumnInfo(name = "macAddress")
     var macAddress: String,
     @ColumnInfo(name = "img")
-    var img: String,
+    var img: String?,
     @ColumnInfo(name = "location")
     var location: String,
     @ColumnInfo(name = "type")
@@ -36,7 +37,9 @@ data class DeviceDb(
     @ColumnInfo(name = "family")
     var family: String,
     @ColumnInfo(name = "model")
-    var model: String
+    var model: String,
+    @ColumnInfo(name = "protocolType")
+    var protocolType: String
 ) : DeviceDataSavedDb() {
     constructor(entity: Device.Basic) : this(
         DATABASE_ID,
@@ -48,7 +51,8 @@ data class DeviceDb(
         entity.location,
         Json.encodeToString(entity.type),
         Json.encodeToString(entity.family),
-        Json.encodeToString(entity.model)
+        Json.encodeToString(entity.model),
+        entity.protocolType.name
     )
 
     override fun toEntity(): Device.Basic {
@@ -61,7 +65,8 @@ data class DeviceDb(
             location = location,
             type = Json.decodeFromString(type),
             family = Json.decodeFromString(family),
-            model = Json.decodeFromString(model)
+            model = Json.decodeFromString(model),
+            protocolType = ProtocolType.valueOf(protocolType)
         )
     }
 }

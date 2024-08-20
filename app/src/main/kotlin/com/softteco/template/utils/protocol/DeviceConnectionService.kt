@@ -1,4 +1,4 @@
-package com.softteco.template.utils.bluetooth
+package com.softteco.template.utils.protocol
 
 import android.annotation.SuppressLint
 import android.app.Notification
@@ -15,12 +15,12 @@ import com.softteco.template.MainActivity
 import com.softteco.template.R
 import timber.log.Timber
 
-class BluetoothDeviceConnectionService : Service() {
+class DeviceConnectionService : Service() {
 
     override fun onBind(intent: Intent?): IBinder? = null
 
     companion object {
-        const val BLUETOOTH_DEVICE_SERVICE_NOTIFICATION_ID = 1
+        const val DEVICE_CONNECTION_SERVICE_NOTIFICATION_ID = 1
     }
 
     @Suppress("TooGenericExceptionCaught")
@@ -36,20 +36,20 @@ class BluetoothDeviceConnectionService : Service() {
         )
         val notification: Notification = NotificationCompat.Builder(
             this,
-            this.getString(R.string.bluetooth_notification_channel_id)
+            this.getString(R.string.device_connection_notification_channel_id)
         )
-            .setContentTitle(getString(R.string.bluetooth_connection_is_running))
-            .setContentText(getString(R.string.bluetooth_connection_active))
+            .setContentTitle(getString(R.string.device_connection_is_running))
+            .setContentText(getString(R.string.device_connection_active))
             .setSmallIcon(R.mipmap.ic_launcher)
             .setContentIntent(pendingIntent)
             .build()
 
         try {
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
-                startForeground(BLUETOOTH_DEVICE_SERVICE_NOTIFICATION_ID, notification)
+                startForeground(DEVICE_CONNECTION_SERVICE_NOTIFICATION_ID, notification)
             } else {
                 startForeground(
-                    BLUETOOTH_DEVICE_SERVICE_NOTIFICATION_ID,
+                    DEVICE_CONNECTION_SERVICE_NOTIFICATION_ID,
                     notification,
                     FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE
                 )
@@ -63,8 +63,8 @@ class BluetoothDeviceConnectionService : Service() {
 
     private fun createNotificationChannel() {
         val serviceChannel = NotificationChannel(
-            getString(R.string.bluetooth_notification_channel_id),
-            getString(R.string.bluetooth_connection),
+            getString(R.string.device_connection_notification_channel_id),
+            getString(R.string.device_connection),
             NotificationManager.IMPORTANCE_DEFAULT
         )
         val manager = getSystemService(

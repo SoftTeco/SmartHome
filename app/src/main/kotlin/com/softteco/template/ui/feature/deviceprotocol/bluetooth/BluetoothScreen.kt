@@ -1,8 +1,7 @@
-package com.softteco.template.ui.feature.bluetooth
+package com.softteco.template.ui.feature.deviceprotocol.bluetooth
 
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothDevice
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -33,31 +32,34 @@ import com.softteco.template.ui.components.OnLifecycleEvent
 import com.softteco.template.ui.components.PrimaryButton
 import com.softteco.template.ui.theme.AppTheme
 import com.softteco.template.ui.theme.Dimens
-import com.softteco.template.utils.bluetooth.BluetoothDeviceConnectionStatus
-import com.softteco.template.utils.bluetooth.getBluetoothDeviceModel
-import com.softteco.template.utils.bluetooth.getBluetoothDeviceName
+import com.softteco.template.utils.protocol.DeviceConnectionStatus
+import com.softteco.template.utils.protocol.getDeviceModel
+import com.softteco.template.utils.protocol.getBluetoothDeviceName
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 @Composable
 fun BluetoothScreen(
-    onOpenDashboard: () -> Unit,
+    onBackClicked: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: BluetoothViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsState()
 
     LaunchedEffect(Unit) {
-        viewModel.initCallbacks(state.deviceName)
+        viewModel.initCallbacks()
+        viewModel.getDeviceConnectionStatusList()
     }
 
     ScreenContent(
         state = state,
         onItemClicked = { bluetoothDevice ->
-            viewModel.provideConnectionToDevice(bluetoothDevice)
+            CoroutineScope(Dispatchers.IO).launch {
+                viewModel.provideConnectionToDevice(bluetoothDevice)
+            }
         },
-        onShowChart = onOpenDashboard,
-        onSetCurrentlyViewedBluetoothDeviceAddress = { bluetoothDeviceAddress ->
-            viewModel.setCurrentlyViewedBluetoothDeviceAddress(bluetoothDeviceAddress)
-        },
+        onBackClicked,
         modifier = modifier
     )
     OnLifecycleEvent { owner, event ->
@@ -80,21 +82,20 @@ fun BluetoothScreen(
 private fun ScreenContent(
     state: BluetoothViewModel.State,
     onItemClicked: (BluetoothDevice) -> Unit,
-    onShowChart: () -> Unit,
-    onSetCurrentlyViewedBluetoothDeviceAddress: (String) -> Unit,
+    onBackClicked: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier.fillMaxSize()) {
         CustomTopAppBar(
-            stringResource(id = R.string.temperature_and_humidity),
+            stringResource(id = R.string.bluetooth),
+            showBackIcon = true,
+            onBackClicked = onBackClicked,
             modifier = Modifier.fillMaxWidth()
         )
         BluetoothDevicesList(
             devices = state.devices,
             devicesConnectionStatusList = state.devicesConnectionStatusList,
-            onItemClicked = onItemClicked,
-            onShowChart = onShowChart,
-            onSetCurrentlyViewedBluetoothDeviceAddress = onSetCurrentlyViewedBluetoothDeviceAddress
+            onItemClicked = onItemClicked
         )
     }
 }
@@ -102,22 +103,18 @@ private fun ScreenContent(
 @Composable
 fun BluetoothDevicesList(
     devices: List<BluetoothDevice>,
-    devicesConnectionStatusList: List<BluetoothDeviceConnectionStatus>,
+    devicesConnectionStatusList: List<DeviceConnectionStatus>,
     onItemClicked: (BluetoothDevice) -> Unit,
-    onShowChart: () -> Unit,
-    onSetCurrentlyViewedBluetoothDeviceAddress: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     LazyColumn(modifier = modifier.fillMaxSize()) {
         items(devices) { device ->
             devicesConnectionStatusList.forEach {
-                if (it.bluetoothDevice.macAddress == device.address) {
+                if (it.device.macAddress == device.address) {
                     BluetoothDeviceCard(
                         bluetoothDevice = device,
                         connectionStatus = it.isConnected,
-                        onItemClicked = onItemClicked,
-                        onShowChart = onShowChart,
-                        onSetCurrentlyViewedBluetoothDeviceAddress = onSetCurrentlyViewedBluetoothDeviceAddress
+                        onItemClicked = onItemClicked
                     )
                 }
             }
@@ -131,8 +128,6 @@ fun BluetoothDeviceCard(
     bluetoothDevice: BluetoothDevice,
     connectionStatus: Boolean?,
     onItemClicked: (BluetoothDevice) -> Unit,
-    onShowChart: () -> Unit,
-    onSetCurrentlyViewedBluetoothDeviceAddress: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -144,16 +139,10 @@ fun BluetoothDeviceCard(
     ) {
         Row(
             modifier = Modifier
-                .clickable {
-                    if (connectionStatus == true) {
-                        onShowChart.invoke()
-                        onSetCurrentlyViewedBluetoothDeviceAddress.invoke(bluetoothDevice.address)
-                    }
-                }
                 .padding(Dimens.PaddingSmall),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            val deviceModel = context.getBluetoothDeviceModel(bluetoothDevice.name)
+            val deviceModel = context.getDeviceModel(bluetoothDevice.name)
             DeviceImage(
                 imageUri = deviceModel.img,
                 Modifier.size(32.dp),
@@ -195,8 +184,7 @@ private fun Preview() {
         ScreenContent(
             state = BluetoothViewModel.State(),
             onItemClicked = {},
-            onShowChart = {},
-            onSetCurrentlyViewedBluetoothDeviceAddress = {}
+            onBackClicked = {}
         )
     }
 }

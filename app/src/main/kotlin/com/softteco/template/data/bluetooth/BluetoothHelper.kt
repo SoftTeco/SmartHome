@@ -3,7 +3,8 @@ package com.softteco.template.data.bluetooth
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGatt
 import com.softteco.template.MainActivity
-import com.softteco.template.utils.bluetooth.BluetoothDeviceConnectionStatus
+import com.softteco.template.utils.protocol.DeviceConnectionStatus
+import kotlinx.coroutines.flow.StateFlow
 import no.nordicsemi.android.support.v18.scanner.ScanResult
 
 interface BluetoothHelper {
@@ -21,7 +22,12 @@ interface BluetoothHelper {
     /**
      * Connecting to the Bluetooth device.
      */
-    fun provideConnectionToDevice(bluetoothDevice: BluetoothDevice)
+    suspend fun provideConnectionToDevice(bluetoothDevice: BluetoothDevice)
+
+    /**
+     * Connecting to the Bluetooth device via mac address.
+     */
+    fun provideConnectionToDeviceViaMacAddress(macAddress: String)
 
     /**
      * Disconnecting from the Bluetooth device.
@@ -72,17 +78,7 @@ interface BluetoothHelper {
     fun onBluetoothModuleChangeStateCallback(onBluetoothModuleChangeState: (ifTurnOn: Boolean) -> Unit)
 
     /**
-     * Get connection statuses of known Bluetooth devices.
+     * Get observable connection statuses of known Bluetooth devices.
      */
-    fun getDeviceConnectionStatusList(): HashMap<String, BluetoothDeviceConnectionStatus>
-
-    /**
-     * Set currently viewed Bluetooth device address for Charts Screen.
-     */
-    fun setCurrentlyViewedBluetoothDeviceAddress(macAddress: String)
-
-    /**
-     * Get currently viewed Bluetooth device address for Charts Screen.
-     */
-    fun getCurrentlyViewedBluetoothDeviceAddress(): String
+    fun getObservableDeviceConnectionStatusList(): StateFlow<Map<String, DeviceConnectionStatus>>
 }

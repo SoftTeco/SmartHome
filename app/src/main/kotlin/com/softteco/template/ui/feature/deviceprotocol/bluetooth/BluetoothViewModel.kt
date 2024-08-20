@@ -1,4 +1,4 @@
-package com.softteco.template.ui.feature.bluetooth
+package com.softteco.template.ui.feature.deviceprotocol.bluetooth
 
 import android.bluetooth.BluetoothDevice
 import androidx.compose.runtime.Immutable
@@ -7,13 +7,14 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.softteco.template.data.bluetooth.BluetoothHelper
 import com.softteco.template.navigation.AppNavHost
-import com.softteco.template.utils.bluetooth.BluetoothDeviceConnectionStatus
-import com.softteco.template.utils.bluetooth.getBluetoothDeviceName
+import com.softteco.template.utils.protocol.DeviceConnectionStatus
+import com.softteco.template.utils.protocol.getBluetoothDeviceName
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import no.nordicsemi.android.support.v18.scanner.ScanResult
 import javax.inject.Inject
 
@@ -26,11 +27,10 @@ class BluetoothViewModel @Inject constructor(
     private var _bluetoothDevices = linkedMapOf<String, ScanResult>()
     private val _devices = MutableStateFlow<List<BluetoothDevice>>(emptyList())
     private val _deviceConnectionStatusList =
-        MutableStateFlow<MutableList<BluetoothDeviceConnectionStatus>>(
+        MutableStateFlow<MutableList<DeviceConnectionStatus>>(
             mutableListOf()
         )
     private var filtered: Boolean = true
-    private var filteredName: String = ""
 
     val state = combine(
         _devices,
@@ -47,18 +47,9 @@ class BluetoothViewModel @Inject constructor(
         State()
     )
 
-    fun initCallbacks(deviceName: String) {
-        filteredName = deviceName
+    fun initCallbacks() {
         onScanCallback {
-            emitDeviceConnectionStatusList()
             addScanResult(it)
-        }
-        onConnectCallback {
-            emitDeviceConnectionStatusList()
-        }
-
-        onDisconnectCallback {
-            emitDeviceConnectionStatusList()
         }
 
         onBluetoothModuleChangeStateCallback {
@@ -80,7 +71,7 @@ class BluetoothViewModel @Inject constructor(
         bluetoothHelper.startScanIfHasPermissions()
     }
 
-    fun provideConnectionToDevice(bluetoothDevice: BluetoothDevice) {
+    suspend fun provideConnectionToDevice(bluetoothDevice: BluetoothDevice) {
         bluetoothHelper.provideConnectionToDevice(bluetoothDevice)
     }
 
@@ -97,39 +88,30 @@ class BluetoothViewModel @Inject constructor(
         bluetoothHelper.onScanCallback(onScanResult)
     }
 
-    private fun onConnectCallback(onConnect: () -> Unit) {
-        bluetoothHelper.onConnectCallback(onConnect)
-    }
-
-    private fun onDisconnectCallback(onDisconnect: () -> Unit) {
-        bluetoothHelper.onDisconnectCallback(onDisconnect)
-    }
-
     private fun onBluetoothModuleChangeStateCallback(onBluetoothModuleChangeState: (ifTurnOn: Boolean) -> Unit) {
         bluetoothHelper.onBluetoothModuleChangeStateCallback(onBluetoothModuleChangeState)
     }
 
-    private fun emitDeviceConnectionStatusList() {
-        _deviceConnectionStatusList.value =
-            bluetoothHelper.getDeviceConnectionStatusList().values.toMutableList()
-    }
-
-    fun setCurrentlyViewedBluetoothDeviceAddress(macAddress: String) {
-        bluetoothHelper.setCurrentlyViewedBluetoothDeviceAddress(macAddress)
+    fun getDeviceConnectionStatusList() {
+        viewModelScope.launch {
+            bluetoothHelper.getObservableDeviceConnectionStatusList().collect { statusList ->
+                _deviceConnectionStatusList.value = statusList.values.toMutableList()
+            }
+        }
     }
 
     private fun emitDevices() {
         _devices.value = _bluetoothDevices
             .map { it.value.device }
             .filter { device ->
-                if (filtered) getBluetoothDeviceName(device) == filteredName else true
+                if (filtered) getBluetoothDeviceName(device) == state.value.deviceName else true
             }
     }
 
     @Immutable
     data class State(
         val devices: List<BluetoothDevice> = emptyList(),
-        val devicesConnectionStatusList: List<BluetoothDeviceConnectionStatus> = emptyList(),
+        val devicesConnectionStatusList: List<DeviceConnectionStatus> = emptyList(),
         val dismissSnackBar: () -> Unit = {},
         val deviceName: String = ""
     )

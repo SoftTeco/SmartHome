@@ -1,8 +1,10 @@
-package com.softteco.template.data.device
+package com.softteco.template.data.device.protocol.bluetooth
 
 import com.softteco.template.Constants
 import com.softteco.template.data.bluetooth.BluetoothByteParser
-import com.softteco.template.utils.bluetooth.characteristicByteConversation
+import com.softteco.template.data.device.Device
+import com.softteco.template.data.device.ThermometerValues
+import com.softteco.template.utils.protocol.bluetoothCharacteristicByteConversation
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -13,13 +15,13 @@ internal class BluetoothByteParserImpl @Inject constructor() : BluetoothBytePars
         return when (bluetoothDeviceModel) {
             Device.Model.LYWSD03MMC -> {
                 ThermometerValues.DataLYWSD03MMC(
-                    characteristicByteConversation(
+                    bluetoothCharacteristicByteConversation(
                         bytes,
                         Constants.START_INDEX_OF_TEMPERATURE,
                         Constants.END_INDEX_OF_TEMPERATURE
                     ) / Constants.DIVISION_VALUE_OF_VALUES,
                     bytes[Constants.INDEX_OF_HUMIDITY].toInt(),
-                    characteristicByteConversation(
+                    bluetoothCharacteristicByteConversation(
                         bytes,
                         Constants.START_INDEX_OF_BATTERY,
                         Constants.END_INDEX_OF_BATTERY

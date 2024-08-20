@@ -1,4 +1,4 @@
-package com.softteco.template.data.device
+package com.softteco.template.data.device.protocol.bluetooth
 
 import android.Manifest
 import android.bluetooth.BluetoothAdapter

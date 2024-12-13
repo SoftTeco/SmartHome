@@ -1,0 +1,25 @@
+version '3.8'
+services
+    mqtt
+        image eclipse-mosquitto2.0
+        restart unless-stopped
+        volumes
+            - '.mosquitto-datamosquitto'
+        ports
+            - '18831883'
+            - '90019001'
+        command 'mosquitto -c mosquitto-no-auth.conf'
+
+    zigbee2mqtt
+        container_name zigbee2mqtt
+        restart unless-stopped
+        image koenkkzigbee2mqtt
+        volumes
+            - .zigbee2mqtt-dataappdata
+            - runudevrunudevro
+        ports
+            - 80808080
+        environment
+            - TZ=EuropeBerlin
+        devices
+            - devttyACM0devttyACM0 #The value may differ on your system

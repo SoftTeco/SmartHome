@@ -1,0 +1,25 @@
+permit_join: true
+mqtt:
+  base_topic: zigbee2mqtt
+  server: mqtt://mqtt
+bridge:
+  name: mqtt
+serial:
+  serial: >-
+    /dev/serial/by-id/usb-ITEAD_SONOFF_Zigbee_3.0_USB_Dongle_Plus_V2_20240218145054-if00 #Replace with path in your system
+frontend:
+  port: 8080
+availability:
+  active:
+    timeout: 10
+  passive:
+    timeout: 150000
+advanced:
+  homeassistant_legacy_entity_attributes: false
+  legacy_api: false
+  legacy_availability_payload: false
+  log_level: debug
+  timeout: 30
+device_options:
+  legacy: false
+devices: {}

@@ -1,0 +1,11 @@
+homeassistant: false
+permit_join: true
+mqtt:
+  base_topic: zigbee2mqtt
+  server: mqtt://0.0.0.0
+serial:
+  adapter: ezsp
+  port: //./COM3 #The value may differ on your system.
+frontend:
+  port: 8080
+devices: {}

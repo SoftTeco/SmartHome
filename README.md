@@ -10,6 +10,9 @@ Application for controlling home automation devices via Bluetooth and ZigBee net
 ## Overview
 SmartHomeApp enables seamless management of smart home devices such as temperature and humidity sensors (e.g., [LYWSD03MMC](https://www.mi.com/nl/product/mi-temperature-and-humidity-monitor-2/specs/)). It integrates with ZigBee and Bluetooth for secure and efficient device communication. Key features include real-time data monitoring, device management, and a user-friendly interface.
 
+- [Server Setup Documentation for Windows](server_configuration/windows/README.md)
+- [Server Setup Documentation for Raspberry Pi](server_configuration/raspberry_pi/README.md)
+
 ---
 
 ## Core Technologies

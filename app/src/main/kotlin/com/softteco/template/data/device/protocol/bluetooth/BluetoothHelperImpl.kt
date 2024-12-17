@@ -203,6 +203,7 @@ internal class BluetoothHelperImpl @Inject constructor(
         )
     }
 
+    @Suppress("TooGenericExceptionCaught")
     override fun unregisterReceiver() {
         try {
             activity?.unregisterReceiver(bluetoothReceiver)

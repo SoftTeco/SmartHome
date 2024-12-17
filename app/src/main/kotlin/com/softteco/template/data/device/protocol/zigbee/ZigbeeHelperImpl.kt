@@ -2,20 +2,21 @@ package com.softteco.template.data.device.protocol.zigbee
 
 import android.content.Intent
 import com.softteco.template.BuildConfig
+import com.softteco.template.Constants.ZIGBEE_BUFFER_SIZE
 import com.softteco.template.MainActivity
 import com.softteco.template.data.base.error.Result
 import com.softteco.template.data.device.Device
 import com.softteco.template.data.device.ProtocolType
 import com.softteco.template.data.device.ThermometerData
-import com.softteco.template.data.zigbee.ZigbeeState
 import com.softteco.template.data.device.ThermometerRepository
 import com.softteco.template.data.device.ThermometerValues
 import com.softteco.template.data.zigbee.ZigbeeHelper
+import com.softteco.template.data.zigbee.ZigbeeState
 import com.softteco.template.utils.ZigbeeDevice
 import com.softteco.template.utils.ZigbeeTopic
 import com.softteco.template.utils.parseZigbeeDevices
-import com.softteco.template.utils.protocol.DeviceConnectionStatus
 import com.softteco.template.utils.protocol.DeviceConnectionService
+import com.softteco.template.utils.protocol.DeviceConnectionStatus
 import com.softteco.template.utils.protocol.checkRemainingConnectionForService
 import com.softteco.template.utils.protocol.getDeviceImage
 import com.softteco.template.utils.protocol.getDeviceModel
@@ -98,23 +99,27 @@ internal class ZigbeeHelperImpl @Inject constructor(
         mqttConnectOptions.isAutomaticReconnect = true
         mqttConnectOptions.isCleanSession = false
 
-        mqttAndroidClient?.connect(mqttConnectOptions, null, object : IMqttActionListener {
-            override fun onSuccess(asyncActionToken: IMqttToken) {
-                val disconnectedBufferOptions = DisconnectedBufferOptions()
-                disconnectedBufferOptions.isBufferEnabled = true
-                disconnectedBufferOptions.bufferSize = 100
-                disconnectedBufferOptions.isPersistBuffer = false
-                disconnectedBufferOptions.isDeleteOldestMessages = false
-                mqttAndroidClient?.setBufferOpts(disconnectedBufferOptions)
-                connectedToHub = true
-                subscribeToTopic(topic)
-            }
+        mqttAndroidClient?.connect(
+            mqttConnectOptions,
+            null,
+            object : IMqttActionListener {
+                override fun onSuccess(asyncActionToken: IMqttToken) {
+                    val disconnectedBufferOptions = DisconnectedBufferOptions()
+                    disconnectedBufferOptions.isBufferEnabled = true
+                    disconnectedBufferOptions.bufferSize = ZIGBEE_BUFFER_SIZE
+                    disconnectedBufferOptions.isPersistBuffer = false
+                    disconnectedBufferOptions.isDeleteOldestMessages = false
+                    mqttAndroidClient?.setBufferOpts(disconnectedBufferOptions)
+                    connectedToHub = true
+                    subscribeToTopic(topic)
+                }
 
-            override fun onFailure(asyncActionToken: IMqttToken?, exception: Throwable?) {
-                connectedToHub = false
-                onDisconnect?.invoke()
+                override fun onFailure(asyncActionToken: IMqttToken?, exception: Throwable?) {
+                    connectedToHub = false
+                    onDisconnect?.invoke()
+                }
             }
-        })
+        )
     }
 
     override fun drop() {
@@ -132,7 +137,7 @@ internal class ZigbeeHelperImpl @Inject constructor(
     }
 
     override fun provideConnectionToDeviceViaMacAddress(macAddress: String) {
-        if(connectedToHub) {
+        if (connectedToHub) {
             subscribeToTopic(ZigbeeTopic.ZIGBEE_DATA_TOPIC.value.plus(macAddress))
         } else {
             connect(ZigbeeTopic.ZIGBEE_DATA_TOPIC.value.plus(macAddress))
@@ -188,7 +193,6 @@ internal class ZigbeeHelperImpl @Inject constructor(
                 override fun onSuccess(asyncActionToken: IMqttToken) {
                     when {
                         topic.contains(ZigbeeTopic.ZIGBEE_DEVICE_TOPIC.value) -> {
-
                         }
 
                         topic.contains(ZigbeeTopic.ZIGBEE_DATA_TOPIC.value.plus(deviceName)) -> {
@@ -272,32 +276,35 @@ internal class ZigbeeHelperImpl @Inject constructor(
     }
 
     private fun unsubscribeFromTopic(topic: String) {
-        mqttAndroidClient?.unsubscribe(topic, null, object : IMqttActionListener {
-            override fun onSuccess(asyncActionToken: IMqttToken) {
-                when {
-                    topic.contains(ZigbeeTopic.ZIGBEE_DEVICE_TOPIC.value) -> {
+        mqttAndroidClient?.unsubscribe(
+            topic,
+            null,
+            object : IMqttActionListener {
+                override fun onSuccess(asyncActionToken: IMqttToken) {
+                    when {
+                        topic.contains(ZigbeeTopic.ZIGBEE_DEVICE_TOPIC.value) -> {
+                        }
 
-                    }
-
-                    topic.contains(ZigbeeTopic.ZIGBEE_DATA_TOPIC.value) -> {
-                        val macAddress = topic.split("/")[1]
-                        _deviceConnectionStatusList.update { currentMap ->
-                            currentMap.toMutableMap().apply {
-                                this[macAddress]?.let { status ->
-                                    val updatedStatus = status.copy(isConnected = false)
-                                    this[macAddress] = updatedStatus
+                        topic.contains(ZigbeeTopic.ZIGBEE_DATA_TOPIC.value) -> {
+                            val macAddress = topic.split("/")[1]
+                            _deviceConnectionStatusList.update { currentMap ->
+                                currentMap.toMutableMap().apply {
+                                    this[macAddress]?.let { status ->
+                                        val updatedStatus = status.copy(isConnected = false)
+                                        this[macAddress] = updatedStatus
+                                    }
                                 }
                             }
+                            stopService()
                         }
-                        stopService()
                     }
                 }
-            }
 
-            override fun onFailure(asyncActionToken: IMqttToken?, exception: Throwable?) {
-                onUnsubscribed?.invoke()
+                override fun onFailure(asyncActionToken: IMqttToken?, exception: Throwable?) {
+                    onUnsubscribed?.invoke()
+                }
             }
-        })
+        )
     }
 
     private fun provideConnectedState(deviceAddress: String) {

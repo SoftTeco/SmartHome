@@ -25,10 +25,10 @@ import com.softteco.template.navigation.AppNavHost.DEVICE_NAME_KEY
 import com.softteco.template.navigation.AppNavHost.DEVICE_PROTOCOL
 import com.softteco.template.navigation.AppNavHost.RESET_PASSWORD_PATH
 import com.softteco.template.navigation.AppNavHost.RESET_TOKEN_ARG
-import com.softteco.template.ui.feature.deviceprotocol.bluetooth.BluetoothScreen
 import com.softteco.template.ui.feature.devicedashboard.devices.robotVacuum.RobotVacuumDashboardScreen
 import com.softteco.template.ui.feature.devicedashboard.devices.thermometer.ThermometerDashboardScreen
 import com.softteco.template.ui.feature.devicedashboard.devicesettings.DeviceSettingsScreen
+import com.softteco.template.ui.feature.deviceprotocol.bluetooth.BluetoothScreen
 import com.softteco.template.ui.feature.deviceprotocol.zigbee.ZigBeeScreen
 import com.softteco.template.ui.feature.devicesearch.DeviceSearchScreen
 import com.softteco.template.ui.feature.home.HomeScreen
@@ -209,10 +209,7 @@ fun NavGraphBuilder.settingsGraph(navController: NavController, modifier: Modifi
 }
 
 fun NavGraphBuilder.homeGraph(navController: NavController, modifier: Modifier = Modifier) {
-    navigation(
-        startDestination = Screen.Home.route,
-        route = Graph.Home.route
-    ) {
+    navigation(startDestination = Screen.Home.route, route = Graph.Home.route) {
         composable(Screen.AddNewDevice.route) {
             AddNewDeviceScreen(
                 onBackClicked = { navController.navigateUp() },
@@ -224,18 +221,12 @@ fun NavGraphBuilder.homeGraph(navController: NavController, modifier: Modifier =
         composable(Screen.ScanQR.route) {
             ScanQRScreen(onBackClicked = { navController.navigateUp() }, modifier)
         }
-        composable(
-            Screen.ManualSelection.route
-        ) {
+        composable(Screen.ManualSelection.route) {
             ManualSelectionScreen(
                 onBackClicked = { navController.navigateUp() },
                 onSearchClick = { navController.navigate(Screen.SearchDevice.route) },
                 onDeviceClick = { _, name ->
-                    navController.navigate(
-                        Screen.DeviceSearch.createRoute(
-                            name
-                        )
-                    )
+                    navController.navigate(Screen.DeviceSearch.createRoute(name))
                 },
                 modifier
             )
@@ -243,7 +234,7 @@ fun NavGraphBuilder.homeGraph(navController: NavController, modifier: Modifier =
         composable(Screen.SearchDevice.route) {
             SearchDeviceScreen(
                 onBackClicked = { navController.navigateUp() },
-                onDeviceClick = { /*TODO*/ },
+                onDeviceClick = { },
                 modifier
             )
         }
@@ -273,14 +264,10 @@ fun NavGraphBuilder.homeGraph(navController: NavController, modifier: Modifier =
             DeviceSearchScreen(
                 onBackClicked = { navController.navigateUp() },
                 firstProtocolSelected = { deviceName ->
-                    navController.navigate(
-                        Screen.Bluetooth.createRoute(deviceName)
-                    )
+                    navController.navigate(Screen.Bluetooth.createRoute(deviceName))
                 },
                 secondProtocolSelected = { deviceName ->
-                    navController.navigate(
-                        Screen.ZigBee.createRoute(deviceName)
-                    )
+                    navController.navigate(Screen.ZigBee.createRoute(deviceName))
                 },
                 modifier = modifier
             )
@@ -290,7 +277,8 @@ fun NavGraphBuilder.homeGraph(navController: NavController, modifier: Modifier =
             arguments = listOf(
                 navArgument(DEVICE_ID_KEY) { type = NavType.StringType },
                 navArgument(DEVICE_PROTOCOL) { type = NavType.StringType },
-                navArgument(DEVICE_MAC_ADDRESS) { type = NavType.StringType })
+                navArgument(DEVICE_MAC_ADDRESS) { type = NavType.StringType }
+            )
         ) {
             ThermometerDashboardScreen(
                 onSettingsClick = { deviceId ->
@@ -316,10 +304,7 @@ fun NavGraphBuilder.homeGraph(navController: NavController, modifier: Modifier =
             route = Screen.DeviceSettings.route,
             arguments = listOf(navArgument(DEVICE_ID_KEY) { type = NavType.StringType })
         ) {
-            DeviceSettingsScreen(
-                onBackClicked = { navController.navigateUp() },
-                modifier = modifier,
-            )
+            DeviceSettingsScreen(onBackClicked = { navController.navigateUp() }, modifier)
         }
     }
 }

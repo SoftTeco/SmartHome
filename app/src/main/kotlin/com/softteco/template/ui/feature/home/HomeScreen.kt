@@ -135,7 +135,8 @@ private fun ScreenContent(
                     Device(
                         it,
                         checkConnectionStatus(it),
-                        onClick = { onDeviceClick(it) })
+                        onClick = { onDeviceClick(it) }
+                    )
                 }
             }
         } else {

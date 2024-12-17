@@ -17,4 +17,5 @@ object Constants {
     const val END_INDEX_OF_BATTERY = 5
     const val DIVISION_VALUE_OF_VALUES = 100
     const val BIT_SHIFT_VALUE = 8
+    const val ZIGBEE_BUFFER_SIZE = 100
 }

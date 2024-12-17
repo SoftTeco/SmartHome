@@ -33,8 +33,8 @@ import com.softteco.template.ui.components.PrimaryButton
 import com.softteco.template.ui.theme.AppTheme
 import com.softteco.template.ui.theme.Dimens
 import com.softteco.template.utils.protocol.DeviceConnectionStatus
-import com.softteco.template.utils.protocol.getDeviceModel
 import com.softteco.template.utils.protocol.getBluetoothDeviceName
+import com.softteco.template.utils.protocol.getDeviceModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch

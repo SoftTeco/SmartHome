@@ -83,8 +83,8 @@ enum class ZigbeeDeviceType {
 }
 
 enum class ZigbeeTopic(val value: String) {
-    ZIGBEE_DATA_TOPIC ("zigbee2mqtt/"),
-    ZIGBEE_DEVICE_TOPIC ("zigbee2mqtt/bridge/devices")
+    ZIGBEE_DATA_TOPIC("zigbee2mqtt/"),
+    ZIGBEE_DEVICE_TOPIC("zigbee2mqtt/bridge/devices")
 }
 
 fun parseZigbeeDevices(json: String): List<ZigbeeDevice> {

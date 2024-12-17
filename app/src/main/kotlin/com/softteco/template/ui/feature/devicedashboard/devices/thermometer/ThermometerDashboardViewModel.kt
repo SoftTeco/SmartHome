@@ -204,8 +204,9 @@ class ThermometerDashboardViewModel @Inject constructor(
                                 fullTemperatureHistory.value =
                                     updatedHistory
 
-                            MeasurementType.HUMIDITY -> fullHumidityHistory.value =
-                                updatedHistory
+                            MeasurementType.HUMIDITY ->
+                                fullHumidityHistory.value =
+                                    updatedHistory
                         }
 
                         if (unit != TimeIntervalMenu.Minute) {

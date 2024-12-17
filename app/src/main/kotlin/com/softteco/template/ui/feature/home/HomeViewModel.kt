@@ -91,7 +91,7 @@ class HomeViewModel @Inject constructor(
         devicesConnectionStatusList: List<DeviceConnectionStatus>,
         device: Device
     ) {
-        if(isDeviceConnected(device, devicesConnectionStatusList)) {
+        if (isDeviceConnected(device, devicesConnectionStatusList)) {
             onDeviceClick(device)
         } else {
             when (device.protocolType) {

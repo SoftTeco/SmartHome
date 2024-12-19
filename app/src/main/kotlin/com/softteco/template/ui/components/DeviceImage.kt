@@ -24,7 +24,7 @@ import com.softteco.template.ui.theme.AppTheme
 
 @Composable
 internal fun DeviceImage(
-    imageUri: String,
+    imageUri: String?,
     modifier: Modifier = Modifier,
     name: String? = null,
     respectCacheHeaders: Boolean = false,
@@ -46,7 +46,7 @@ internal fun DeviceImage(
                 .memoryCachePolicy(CachePolicy.ENABLED)
                 .diskCachePolicy(CachePolicy.ENABLED)
                 .build()
-            rememberAsyncImagePainter(model = avatar.toUri(), imageLoader = imageLoader)
+            rememberAsyncImagePainter(model = avatar?.toUri(), imageLoader = imageLoader)
         }
 
         Box(contentAlignment = Alignment.Center) {

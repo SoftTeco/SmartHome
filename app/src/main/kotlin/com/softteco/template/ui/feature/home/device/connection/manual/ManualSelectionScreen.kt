@@ -41,7 +41,9 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.softteco.template.R
 import com.softteco.template.data.device.Device
 import com.softteco.template.data.device.Device.Family.Sensor.getName
+import com.softteco.template.data.device.Device.Model.Unknown.getName
 import com.softteco.template.data.device.SupportedDevice
+import com.softteco.template.data.device.SupportedDevices
 import com.softteco.template.ui.components.DeviceImage
 import com.softteco.template.ui.components.PreviewStub.supportedDevices
 import com.softteco.template.ui.theme.AppTheme
@@ -55,7 +57,7 @@ private const val GRID_CELL_COUNT = 2
 fun ManualSelectionScreen(
     onBackClicked: () -> Unit,
     onSearchClick: () -> Unit,
-    onDeviceClick: (SupportedDevice) -> Unit,
+    onDeviceClick: (SupportedDevice, String) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: ManualSelectionViewModel = hiltViewModel(),
 ) {
@@ -69,7 +71,7 @@ private fun ScreenContent(
     state: ManualSelectionViewModel.State,
     onBackClicked: () -> Unit,
     onSearchClick: () -> Unit,
-    onDeviceClick: (SupportedDevice) -> Unit,
+    onDeviceClick: (SupportedDevice, String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -98,7 +100,7 @@ private fun ScreenContent(
         val devicesByFamily by remember {
             derivedStateOf {
                 state.devices
-                    .groupBy { it.family }
+                    .groupBy { it.supportedDevice.family }
                     .toList()
                     .sortedBy { it.first.getName(context) }
             }
@@ -114,17 +116,17 @@ private fun ScreenContent(
                 end = PaddingDefault,
             ),
         ) {
-            devicesByFamily.forEach { familyDevicesPair: Pair<Device.Family, List<SupportedDevice>> ->
+            devicesByFamily.forEach { familyDevicesPair: Pair<Device.Family, List<SupportedDevices>> ->
                 item(span = { GridItemSpan(GRID_CELL_COUNT) }) {
                     Text(
                         familyDevicesPair.first.toString(),
                         style = MaterialTheme.typography.titleSmall,
                     )
                 }
-                items(familyDevicesPair.second.sortedBy { it.type.toString() }) {
+                items(familyDevicesPair.second.sortedBy { it.supportedDevice.type.toString() }) {
                     Device(
-                        device = it,
-                        onClick = { onDeviceClick(it) },
+                        device = it.supportedDevice,
+                        onClick = { onDeviceClick(it.supportedDevice, it.supportedDevice.model.getName(context)) },
                         Modifier.padding(top = 12.dp)
                     )
                 }
@@ -136,7 +138,6 @@ private fun ScreenContent(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun Device(device: SupportedDevice, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val context = LocalContext.current
@@ -169,7 +170,7 @@ private fun Preview() {
             state = ManualSelectionViewModel.State(supportedDevices),
             onBackClicked = {},
             onSearchClick = {},
-            onDeviceClick = {},
+            onDeviceClick = { _, _ -> },
         )
     }
 }

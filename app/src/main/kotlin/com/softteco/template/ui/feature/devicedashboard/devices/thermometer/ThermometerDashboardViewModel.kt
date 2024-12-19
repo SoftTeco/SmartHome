@@ -2,14 +2,20 @@ package com.softteco.template.ui.feature.devicedashboard.devices.thermometer
 
 import androidx.annotation.StringRes
 import androidx.compose.runtime.Immutable
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.patrykandpatrick.vico.core.cartesian.data.CartesianValueFormatter
 import com.patrykandpatrick.vico.core.common.data.ExtraStore
 import com.softteco.template.R
 import com.softteco.template.data.base.error.Result
-import com.softteco.template.data.device.Thermometer
+import com.softteco.template.data.bluetooth.BluetoothHelper
+import com.softteco.template.data.device.ProtocolType
+import com.softteco.template.data.device.ThermometerData
 import com.softteco.template.data.device.ThermometerRepository
+import com.softteco.template.data.device.ThermometerValues
+import com.softteco.template.data.zigbee.ZigbeeHelper
+import com.softteco.template.navigation.AppNavHost
 import com.softteco.template.ui.components.snackbar.SnackbarController
 import com.softteco.template.utils.AppDispatchers
 import com.softteco.template.utils.ChartUtils.aggregateByInterval
@@ -34,6 +40,9 @@ class ThermometerDashboardViewModel @Inject constructor(
     private val thermometerRepository: ThermometerRepository,
     private val snackbarController: SnackbarController,
     private val appDispatchers: AppDispatchers,
+    private val bluetoothHelper: BluetoothHelper,
+    private val zigbeeHelper: ZigbeeHelper,
+    savedStateHandle: SavedStateHandle
 ) : ViewModel() {
     private val loading = MutableStateFlow(false)
 
@@ -45,12 +54,7 @@ class ThermometerDashboardViewModel @Inject constructor(
         emptyMap()
     )
 
-    private val thermometer = MutableStateFlow(
-        Thermometer(
-            deviceId = "",
-            deviceName = "",
-        )
-    )
+    private val thermometer = MutableStateFlow<ThermometerData?>(null)
 
     private val bottomAxisValueFormatter = MutableStateFlow(
         CartesianValueFormatter { x, chartValues, _ ->
@@ -71,7 +75,9 @@ class ThermometerDashboardViewModel @Inject constructor(
         State(
             thermometer = thermometer,
             bottomAxisValueFormatter = formatter,
-            loading = loading
+            loading = loading,
+            deviceProtocol = checkNotNull(savedStateHandle.get<String>(AppNavHost.DEVICE_PROTOCOL)),
+            deviceMacAddress = checkNotNull(savedStateHandle.get<String>(AppNavHost.DEVICE_MAC_ADDRESS))
         )
     }.stateIn(
         viewModelScope,
@@ -79,25 +85,49 @@ class ThermometerDashboardViewModel @Inject constructor(
         State()
     )
 
-    init {
-        getThermometerHistory()
-    }
-
-    private fun getThermometerHistory() {
+    fun getThermometerHistory() {
         loading.value = true
         viewModelScope.launch(appDispatchers.io) {
-            when (val result = thermometerRepository.getThermometerData()) {
+            when (
+                val result =
+                    thermometerRepository.getThermometerData(state.value.deviceMacAddress)
+            ) {
                 is Result.Success -> {
                     thermometer.value = result.data
-                    fullTemperatureHistory.value = result.data.temperatureHistory
-                    fullHumidityHistory.value = result.data.humidityHistory
+                    val temperatureHistory = emptyMap<LocalDateTime, Float>().toMutableMap()
+                    val humidityHistory = emptyMap<LocalDateTime, Float>().toMutableMap()
+                    result.data.valuesHistory.forEach {
+                        (it as ThermometerValues.DataLYWSD03MMC).let {
+                            temperatureHistory[it.timestamp] = it.temperature.toFloat()
+                            humidityHistory[it.timestamp] = it.humidity.toFloat()
+                        }
+                    }
+                    thermometer.value?.temperatureHistory = temperatureHistory
+                    thermometer.value?.humidityHistory = humidityHistory
+                    fullTemperatureHistory.value = temperatureHistory
+                    fullHumidityHistory.value = humidityHistory
                     loading.value = false
                 }
+
                 is Result.Error -> {
                     loading.value = false
                     snackbarController.showSnackbar(result.error.messageRes)
                 }
             }
+        }
+    }
+
+    fun onDeviceResultCallback(onDeviceResult: () -> Unit) {
+        when (ProtocolType.fromString(state.value.deviceProtocol)) {
+            ProtocolType.ZIGBEE -> {
+                zigbeeHelper.onDeviceResultCallback(onDeviceResult)
+            }
+
+            ProtocolType.BLUETOOTH -> {
+                bluetoothHelper.onDeviceResultCallback(onDeviceResult)
+            }
+
+            else -> {}
         }
     }
 
@@ -113,8 +143,8 @@ class ThermometerDashboardViewModel @Inject constructor(
             fullHistory
         }
         thermometer.value = when (type) {
-            MeasurementType.TEMPERATURE -> thermometer.value.copy(temperatureHistory = updatedHistory)
-            MeasurementType.HUMIDITY -> thermometer.value.copy(humidityHistory = updatedHistory)
+            MeasurementType.TEMPERATURE -> thermometer.value?.copy(temperatureHistory = updatedHistory)
+            MeasurementType.HUMIDITY -> thermometer.value?.copy(humidityHistory = updatedHistory)
         }
 
         bottomAxisValueFormatter.value = CartesianValueFormatter { x, chartValues, _ ->
@@ -129,9 +159,15 @@ class ThermometerDashboardViewModel @Inject constructor(
 
     fun getCurrentMeasurement(unit: TimeIntervalMenu, measurementType: MeasurementType) {
         viewModelScope.launch(appDispatchers.io) {
-            when (val result = thermometerRepository.getCurrentMeasurement()) {
+            when (
+                val result =
+                    thermometerRepository.getCurrentMeasurement(state.value.deviceMacAddress)
+            ) {
                 is Result.Success -> {
-                    val newMeasurementValue = result.data
+                    val newMeasurementValue = when (measurementType) {
+                        MeasurementType.TEMPERATURE -> (result.data as ThermometerValues.DataLYWSD03MMC).temperature
+                        MeasurementType.HUMIDITY -> (result.data as ThermometerValues.DataLYWSD03MMC).humidity
+                    }
                     val currentHistory = when (measurementType) {
                         MeasurementType.TEMPERATURE -> fullTemperatureHistory.value
                         MeasurementType.HUMIDITY -> fullHumidityHistory.value
@@ -145,24 +181,32 @@ class ThermometerDashboardViewModel @Inject constructor(
                     ) {
                         val updatedHistory = currentHistory.toMutableMap()
 
-                        updatedHistory[now] = newMeasurementValue
+                        updatedHistory[now] = newMeasurementValue.toFloat()
 
                         val updatedThermometerData = when (measurementType) {
-                            MeasurementType.TEMPERATURE -> thermometer.value.copy(
-                                currentTemperature = newMeasurementValue,
-                                temperatureHistory = updatedHistory
+                            MeasurementType.TEMPERATURE -> thermometer.value?.copy(
+                                temperatureHistory = updatedHistory,
+                                currentTemperature = result.data.temperature,
+                                currentHumidity = result.data.humidity
                             )
-                            MeasurementType.HUMIDITY -> thermometer.value.copy(
-                                currentHumidity = newMeasurementValue,
-                                humidityHistory = updatedHistory
+
+                            MeasurementType.HUMIDITY -> thermometer.value?.copy(
+                                humidityHistory = updatedHistory,
+                                currentTemperature = result.data.temperature,
+                                currentHumidity = result.data.humidity
                             )
                         }
 
                         thermometer.value = updatedThermometerData
 
                         when (measurementType) {
-                            MeasurementType.TEMPERATURE -> fullTemperatureHistory.value = updatedHistory
-                            MeasurementType.HUMIDITY -> fullHumidityHistory.value = updatedHistory
+                            MeasurementType.TEMPERATURE ->
+                                fullTemperatureHistory.value =
+                                    updatedHistory
+
+                            MeasurementType.HUMIDITY ->
+                                fullHumidityHistory.value =
+                                    updatedHistory
                         }
 
                         if (unit != TimeIntervalMenu.Minute) {
@@ -171,6 +215,7 @@ class ThermometerDashboardViewModel @Inject constructor(
                     }
                     loading.value = false
                 }
+
                 is Result.Error -> {
                     snackbarController.showSnackbar(result.error.messageRes)
                 }
@@ -180,7 +225,7 @@ class ThermometerDashboardViewModel @Inject constructor(
 
     @Immutable
     data class State(
-        val thermometer: Thermometer = Thermometer("", ""),
+        val thermometer: ThermometerData? = null,
         val bottomAxisValueFormatter: CartesianValueFormatter = CartesianValueFormatter { x, chartValues, _ ->
             val dateTime = chartValues.model.extraStore[xToDateMapKeyLocalDateTime][x]
             if (dateTime != null) {
@@ -190,6 +235,8 @@ class ThermometerDashboardViewModel @Inject constructor(
             }
         },
         val loading: Boolean = false,
+        val deviceProtocol: String = "",
+        val deviceMacAddress: String = ""
     )
 
     enum class TimeIntervalMenu(

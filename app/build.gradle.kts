@@ -39,6 +39,15 @@ android {
         android.buildFeatures.buildConfig = true
     }
 
+    signingConfigs {
+        create("release") {
+            keyAlias = System.getenv("KEY_ALIAS") ?: "yourKeyAlias"
+            keyPassword = System.getenv("KEY_PASSWORD") ?: "yourKeyPassword"
+            storeFile = file(System.getenv("KEYSTORE_FILE") ?: "path/to/your/keystore.jks")
+            storePassword = System.getenv("KEYSTORE_PASSWORD") ?: "yourStorePassword"
+        }
+    }
+
     buildTypes {
 
         val envBaseUrl = "\"${System.getenv("BASE_URL")}\""
@@ -94,6 +103,7 @@ android {
                 "ZIGBEE_SERVER_URL_VALUE",
                 zigbeeServerUrl
             )
+            signingConfig = signingConfigs.getByName("release")
         }
         debug {
             isDebuggable = true

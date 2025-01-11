@@ -1,0 +1,85 @@
+name: CI
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ "smart_home" ]
+  pull_request:
+    branches: [ "smart_home" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Install Android SDK
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y wget unzip
+          wget https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O cmdline-tools.zip
+          mkdir -p $HOME/android/cmdline-tools
+          unzip cmdline-tools.zip -d $HOME/android/cmdline-tools
+          mv $HOME/android/cmdline-tools/cmdline-tools $HOME/android/cmdline-tools/latest
+          export ANDROID_HOME=$HOME/android
+          export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH
+          sdkmanager --install "build-tools;34.0.0" "platform-tools" "platforms;android-34"
+
+      - name: Cache Gradle dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.gradle/caches
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/.gradle') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Set up Gradle wrapper
+        run: ./gradlew wrapper
+
+      - name: Replace google-services.json
+        run: |
+          echo ${{ secrets.GOOGLE_SERVICES_JSON }} > app/google-services.json
+
+      - name: Decode keystore from base64
+        run: |
+          echo ${{ secrets.KEYSTORE_BASE64 }} | base64 -d > release-key.jks
+        env:
+          KEYSTORE_FILE: release-key.jks  # Путь к файлу keystore
+
+      - name: Build release APK
+        env:
+          BASE_URL: ${{ secrets.BASE_URL }}
+          BLUETOOTH_CHARACTERISTIC_UUID_VALUE: ${{ secrets.BLUETOOTH_CHARACTERISTIC_UUID_VALUE }}
+          BLUETOOTH_DESCRIPTOR_UUID_VALUE: ${{ secrets.BLUETOOTH_DESCRIPTOR_UUID_VALUE }}
+          BLUETOOTH_SERVICE_UUID_VALUE: ${{ secrets.BLUETOOTH_SERVICE_UUID_VALUE }}
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+          ZIGBEE_SERVER_URL_VALUE: ${{ secrets.ZIGBEE_SERVER_URL_VALUE }}
+        run: ./gradlew assembleRelease
+
+      - name: Sign APK
+        run: |
+          jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 \
+            -keystore release-key.jks \
+            -storepass ${{ secrets.KEYSTORE_PASSWORD }} \
+            -keypass ${{ secrets.KEY_PASSWORD }} \
+            app/build/outputs/apk/release/app-release-unsigned.apk ${{ secrets.KEY_ALIAS }}
+
+      - name: Align APK
+        run: |
+          $ANDROID_HOME/build-tools/34.0.0/zipalign -v -p 4 \
+            app/build/outputs/apk/release/app-release-unsigned.apk \
+            app/build/outputs/apk/release/app-release.apk
+
+      - name: Upload signed APK
+        uses: actions/upload-artifact@v3
+        with:
+          name: signed-android-apk
+          path: app/build/outputs/apk/release/app-release.apk
+          

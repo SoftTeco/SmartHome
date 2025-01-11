@@ -266,3 +266,7 @@ tasks.register("createGoogleServicesJson") {
 tasks.preBuild {
     dependsOn("createGoogleServicesJson")
 }
+
+tasks.withType<com.google.android.gms.oss.licenses.plugin.LicensesTask> {
+    outputs.upToDateWhen { false }
+}

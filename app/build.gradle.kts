@@ -41,10 +41,10 @@ android {
 
     signingConfigs {
         create("release") {
-            keyAlias = System.getenv("KEY_ALIAS") ?: "yourKeyAlias"
-            keyPassword = System.getenv("KEY_PASSWORD") ?: "yourKeyPassword"
-            storeFile = file(System.getenv("KEYSTORE_FILE") ?: "path/to/your/keystore.jks")
-            storePassword = System.getenv("KEYSTORE_PASSWORD") ?: "yourStorePassword"
+            keyAlias = "yourKeyAlias"
+            keyPassword = "yourKeyPassword"
+            storeFile = file(System.getenv("KEYSTORE_FILE"))
+            storePassword = "yourStorePassword"
         }
     }
 

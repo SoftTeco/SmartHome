@@ -49,9 +49,9 @@ jobs:
 
       - name: Decode keystore from base64
         run: |
-          echo ${{ secrets.KEYSTORE_BASE64 }} | base64 -d > release-key.jks
+          echo ${{ secrets.KEYSTORE_BASE64 }} | base64 -d > ${{ github.workspace }}/release-key.jks
         env:
-          KEYSTORE_FILE: release-key.jks
+          KEYSTORE_FILE: ${{ github.workspace }}/release-key.jks
 
       - name: Build release APK
         env:

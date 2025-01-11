@@ -1,0 +1,104 @@
+name: CI
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ "smart_home" ]
+  pull_request:
+    branches: [ "smart_home" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Install Android SDK
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y wget unzip
+          wget https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O cmdline-tools.zip
+          mkdir -p $HOME/android/cmdline-tools
+          unzip cmdline-tools.zip -d $HOME/android/cmdline-tools
+          mv $HOME/android/cmdline-tools/cmdline-tools $HOME/android/cmdline-tools/latest
+          export ANDROID_HOME=$HOME/android
+          export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH
+          sdkmanager --install "build-tools;34.0.0" "platform-tools" "platforms;android-34"
+
+      - name: Cache Gradle dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.gradle/caches
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/.gradle') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Set up Gradle wrapper
+        run: ./gradlew wrapper
+
+      - name: Replace google-services.json
+        run: |
+          echo ${{ secrets.GOOGLE_SERVICES_JSON }} | base64 --decode > app/google-services.json
+
+      - name: Decode keystore from base64
+        run: |
+          echo ${{ secrets.KEYSTORE }} | base64 --decode > release-key.jks
+
+      - name: Clean build directory
+        run: ./gradlew clean
+
+      - name: Build release APK
+        env:
+          BASE_URL: ${{ secrets.BASE_URL }}
+          BLUETOOTH_CHARACTERISTIC_UUID_VALUE: ${{ secrets.BLUETOOTH_CHARACTERISTIC_UUID_VALUE }}
+          BLUETOOTH_DESCRIPTOR_UUID_VALUE: ${{ secrets.BLUETOOTH_DESCRIPTOR_UUID_VALUE }}
+          BLUETOOTH_SERVICE_UUID_VALUE: ${{ secrets.BLUETOOTH_SERVICE_UUID_VALUE }}
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+          ZIGBEE_SERVER_URL_VALUE: ${{ secrets.ZIGBEE_SERVER_URL_VALUE }}
+        run: ./gradlew assembleRelease
+
+      - name: Align APK
+        run: |
+          $ANDROID_HOME/build-tools/34.0.0/zipalign -v -p 4 \
+          app/build/outputs/apk/release/app-release-unsigned.apk \
+          app/build/outputs/apk/release/app-release-aligned.apk
+
+      - name: Sign APK
+        run: |
+          "${ANDROID_HOME}/build-tools/34.0.0/apksigner" sign \
+          --ks release-key.jks \
+          --ks-pass pass:$(echo ${{ secrets.KEYSTORE_PASSWORD }} | base64 --decode) \
+          --key-pass pass:$(echo ${{ secrets.KEY_PASSWORD }} | base64 --decode) \
+          --ks-key-alias $(echo ${{ secrets.KEY_ALIAS }} | base64 --decode) \
+          --out app/build/outputs/apk/release/app-release.apk \
+          app/build/outputs/apk/release/app-release-aligned.apk
+
+      - name: Verify APK signature
+        run: |
+          $ANDROID_HOME/build-tools/34.0.0/apksigner verify \
+          --verbose \
+          app/build/outputs/apk/release/app-release.apk
+
+      - name: Install Firebase CLI
+        run: |
+          curl -sL https://firebase.tools | bash
+          firebase --version
+
+      - name: Upload APK to Firebase App Distribution
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}
+          FIREBASE_APP_ID: ${{ secrets.FIREBASE_APP_ID }}
+        run: |
+          echo $GOOGLE_APPLICATION_CREDENTIALS | base64 --decode > service-account-key.json
+          export GOOGLE_APPLICATION_CREDENTIALS=$(pwd)/service-account-key.json
+          firebase appdistribution:distribute \
+          app/build/outputs/apk/release/app-release.apk \
+          --app "$(echo $FIREBASE_APP_ID | base64 --decode)" \
+          --groups "testers"

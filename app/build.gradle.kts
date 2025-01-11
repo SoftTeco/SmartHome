@@ -43,7 +43,7 @@ android {
         create("release") {
             keyAlias = "yourKeyAlias"
             keyPassword = "yourKeyPassword"
-            storeFile = file(System.getenv("KEYSTORE_FILE"))
+            storeFile = file(System.getenv("KEYSTORE_FILE") ?: "app/keystore/release-key.jks")
             storePassword = "yourStorePassword"
         }
     }

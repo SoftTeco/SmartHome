@@ -53,8 +53,14 @@ jobs:
         env:
           KEYSTORE_FILE: ${{ github.workspace }}/release-key.jks
 
-      - name: Decode password from base64
-        run: echo "${{ secrets.ENCODED_KEYSTORE_PASSWORD }}" | base64 --decode > decoded_password.txt
+      - name: Decode keystore password from base64
+        run: echo "${{ secrets.KEYSTORE_PASSWORD }}" | base64 --decode > decoded_keystore_password.txt
+
+      - name: Decode key password from base64
+        run: echo "${{ secrets.KEY_PASSWORD }}" | base64 --decode > decoded_key_password.txt
+
+      - name: Decode key alias from base64
+        run: echo "${{ secrets.KEY_ALIAS }}" | base64 --decode > decoded_key_alias.txt
 
       - name: Build release APK
         env:
@@ -69,10 +75,10 @@ jobs:
       - name: Sign APK
         run: |
           jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 \
-            -keystore release-key.jks \
-            -storepass $(cat decoded_password.txt) \
-            -keypass ${{ secrets.KEY_PASSWORD }} \
-            app/build/outputs/apk/release/app-release-unsigned.apk ${{ secrets.KEY_ALIAS }}
+            -KEYSTORE_FILE \
+            -storepass $(cat decoded_keystore_password.txt) \
+            -keypass $(cat decoded_key_password.txt) \
+            app/build/outputs/apk/release/app-release-unsigned.apk $(cat decoded_key_alias.txt)
 
       - name: Align APK
         run: |

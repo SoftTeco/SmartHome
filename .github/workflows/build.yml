@@ -77,16 +77,22 @@ jobs:
 
       - name: Sign APK
         run: |
-          jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 \
-            -keystore "${{ github.workspace }}/release-key.jks" \
-            -storepass $(cat decoded_keystore_password.txt) \
-            -keypass $(cat decoded_key_password.txt) \
-            app/build/outputs/apk/release/app-release-unsigned.apk $(cat decoded_key_alias.txt)
+          $ANDROID_HOME/build-tools/34.0.0/apksigner sign \
+            --ks "${{ github.workspace }}/release-key.jks" \
+            --ks-pass pass:$(cat decoded_keystore_password.txt) \
+            --key-pass pass:$(cat decoded_key_password.txt) \
+            --ks-key-alias $(cat decoded_key_alias.txt) \
+            --out app/build/outputs/apk/release/app-release-signed.apk \
+            app/build/outputs/apk/release/app-release-unsigned.apk
+
+      - name: Verify APK signature
+        run: |
+          $ANDROID_HOME/build-tools/34.0.0/apksigner verify app/build/outputs/apk/release/app-release-signed.apk
 
       - name: Align APK
         run: |
           $ANDROID_HOME/build-tools/34.0.0/zipalign -v -p 4 \
-            app/build/outputs/apk/release/app-release-unsigned.apk \
+            app/build/outputs/apk/release/app-release-signed.apk \
             app/build/outputs/apk/release/app-release.apk
 
       - name: Upload signed APK

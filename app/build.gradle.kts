@@ -39,20 +39,20 @@ android {
         android.buildFeatures.buildConfig = true
     }
 
-    signingConfigs {
-        create("release") {
-            keyAlias = System.getenv("KEY_ALIAS")
-                ?: File("${rootDir}/decoded_key_alias.txt").takeIf { it.exists() }?.readText()
-                    ?.trim()
-            keyPassword = System.getenv("KEY_PASSWORD")
-                ?: File("${rootDir}/decoded_key_password.txt").takeIf { it.exists() }?.readText()
-                    ?.trim()
-            storeFile = file(System.getenv("KEYSTORE_FILE") ?: "${rootDir}/release-key.jks")
-            storePassword = System.getenv("KEYSTORE_PASSWORD")
-                ?: File("${rootDir}/decoded_keystore_password.txt").takeIf { it.exists() }
-                    ?.readText()?.trim()
-        }
-    }
+//    signingConfigs {
+//        create("release") {
+//            keyAlias = System.getenv("KEY_ALIAS")
+//                ?: File("${rootDir}/decoded_key_alias.txt").takeIf { it.exists() }?.readText()
+//                    ?.trim()
+//            keyPassword = System.getenv("KEY_PASSWORD")
+//                ?: File("${rootDir}/decoded_key_password.txt").takeIf { it.exists() }?.readText()
+//                    ?.trim()
+//            storeFile = file(System.getenv("KEYSTORE_FILE") ?: "${rootDir}/release-key.jks")
+//            storePassword = System.getenv("KEYSTORE_PASSWORD")
+//                ?: File("${rootDir}/decoded_keystore_password.txt").takeIf { it.exists() }
+//                    ?.readText()?.trim()
+//        }
+//    }
 
     buildTypes {
 
@@ -109,7 +109,7 @@ android {
                 "ZIGBEE_SERVER_URL_VALUE",
                 zigbeeServerUrl
             )
-            signingConfig = signingConfigs.getByName("release")
+//            signingConfig = signingConfigs.getByName("release")
         }
         debug {
             isDebuggable = true

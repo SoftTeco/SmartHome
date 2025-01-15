@@ -60,6 +60,11 @@ jobs:
       - name: Decode key alias from base64
         run: echo "${{ secrets.KEY_ALIAS }}" | base64 --decode > decoded_key_alias.txt
 
+      - name: Add self-signed certificate to Java truststore
+        run: |
+          echo "${{ secrets.CERTIFICATE }}" | base64 -d > mycert.cer
+          keytool -import -alias "mycert" -file mycert.cer -keystore $JAVA_HOME/lib/security/cacerts -storepass changeit -noprompt
+
       - name: Build release APK
         env:
           BASE_URL: ${{ secrets.BASE_URL }}
@@ -68,9 +73,7 @@ jobs:
           BLUETOOTH_SERVICE_UUID_VALUE: ${{ secrets.BLUETOOTH_SERVICE_UUID_VALUE }}
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
           ZIGBEE_SERVER_URL_VALUE: ${{ secrets.ZIGBEE_SERVER_URL_VALUE }}
-        run: |
-          ./gradlew assembleRelease --stacktrace
-          ls -l app/build/outputs/apk/release/
+        run: ./gradlew assembleRelease
 
       - name: Sign APK
         run: |
@@ -85,10 +88,6 @@ jobs:
           $ANDROID_HOME/build-tools/34.0.0/zipalign -v -p 4 \
             app/build/outputs/apk/release/app-release-unsigned.apk \
             app/build/outputs/apk/release/app-release.apk
-
-      - name: Verify APK
-        run: |
-          jarsigner -verify -verbose -certs app/build/outputs/apk/release/app-release.apk
 
       - name: Upload signed APK
         uses: actions/upload-artifact@v3

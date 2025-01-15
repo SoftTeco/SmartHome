@@ -50,8 +50,6 @@ jobs:
       - name: Decode keystore from base64
         run: |
           echo ${{ secrets.KEYSTORE_BASE64 }} | base64 -d > ${{ github.workspace }}/release-key.jks
-        env:
-          KEYSTORE_FILE: ${{ github.workspace }}/release-key.jks
 
       - name: Decode keystore password from base64
         run: echo "${{ secrets.KEYSTORE_PASSWORD }}" | base64 --decode > decoded_keystore_password.txt
@@ -75,7 +73,7 @@ jobs:
       - name: Sign APK
         run: |
           jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 \
-            -KEYSTORE_FILE \
+            -keystore "${{ github.workspace }}/release-key.jks" \
             -storepass $(cat decoded_keystore_password.txt) \
             -keypass $(cat decoded_key_password.txt) \
             app/build/outputs/apk/release/app-release-unsigned.apk $(cat decoded_key_alias.txt)

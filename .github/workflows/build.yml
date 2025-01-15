@@ -63,7 +63,7 @@ jobs:
       - name: Add self-signed certificate to Java truststore
         run: |
           echo "${{ secrets.CERTIFICATE }}" | base64 -d > cert.cer
-          keytool -import -alias "cert" -file cert.cer -keystore $JAVA_HOME/lib/security/cacerts -storepass changeit -noprompt
+          sudo keytool -import -alias "cert" -file cert.cer -keystore $JAVA_HOME/lib/security/cacerts -storepass changeit -noprompt
 
       - name: Build release APK
         env:

@@ -6,6 +6,7 @@ interface ThermometerRepository {
 
     suspend fun getDevices(): Result<List<Device>>
     suspend fun saveDevice(device: Device): Result<Long>
+    suspend fun deleteDevice(macAddress: String): Result<Int>
     suspend fun getThermometerData(macAddress: String): Result<ThermometerData>
     suspend fun saveThermometerData(thermometerData: ThermometerData): Result<Long>
     suspend fun getCurrentMeasurement(macAddress: String): Result<ThermometerValues>

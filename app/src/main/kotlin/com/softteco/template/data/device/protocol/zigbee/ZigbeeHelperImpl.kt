@@ -94,7 +94,7 @@ internal class ZigbeeHelperImpl @Inject constructor(
         }
     }
 
-    override fun connect(topic: String) {
+    override fun connectToHub(topic: String) {
         val mqttConnectOptions = MqttConnectOptions()
         mqttConnectOptions.isAutomaticReconnect = true
         mqttConnectOptions.isCleanSession = false
@@ -122,17 +122,25 @@ internal class ZigbeeHelperImpl @Inject constructor(
         )
     }
 
+
+
+    override fun disconnect(topic: String) {
+        unsubscribeFromTopic(topic)
+    }
+
     override fun drop() {
         stopService()
         mqttAndroidClient?.disconnect()
         this.activity = null
     }
 
-    override suspend fun provideConnectionToDevice(topic: String) {
-        if (checkConnectedDevice(topic.split("/")[1])) {
-            unsubscribeFromTopic(topic)
-        } else {
-            subscribeToTopic(topic)
+    override fun connect(topic: String) {
+        runBlocking {
+            if (checkConnectedDevice(topic.split("/")[1])) {
+                unsubscribeFromTopic(topic)
+            } else {
+                subscribeToTopic(topic)
+            }
         }
     }
 
@@ -140,7 +148,7 @@ internal class ZigbeeHelperImpl @Inject constructor(
         if (connectedToHub) {
             subscribeToTopic(ZigbeeTopic.ZIGBEE_DATA_TOPIC.value.plus(macAddress))
         } else {
-            connect(ZigbeeTopic.ZIGBEE_DATA_TOPIC.value.plus(macAddress))
+            connectToHub(ZigbeeTopic.ZIGBEE_DATA_TOPIC.value.plus(macAddress))
         }
     }
 
@@ -153,6 +161,11 @@ internal class ZigbeeHelperImpl @Inject constructor(
     }
 
     override fun getObservableDeviceConnectionStatusList() = deviceConnectionStatusList
+
+    override fun checkConnectedDevice(topic: String): Boolean {
+        val statusMap = runBlocking { deviceConnectionStatusList.first() }
+        return statusMap[topic]?.isConnected ?: false
+    }
 
     private fun setCallbacks() {
         mqttAndroidClient?.setCallback(object : MqttCallbackExtended {
@@ -192,8 +205,7 @@ internal class ZigbeeHelperImpl @Inject constructor(
             object : IMqttActionListener {
                 override fun onSuccess(asyncActionToken: IMqttToken) {
                     when {
-                        topic.contains(ZigbeeTopic.ZIGBEE_DEVICE_TOPIC.value) -> {
-                        }
+                        topic.contains(ZigbeeTopic.ZIGBEE_DEVICE_TOPIC.value) -> {}
 
                         topic.contains(ZigbeeTopic.ZIGBEE_DATA_TOPIC.value.plus(deviceName)) -> {
                             provideConnectedState(asyncActionToken.topics[0].split("/")[1])
@@ -331,11 +343,6 @@ internal class ZigbeeHelperImpl @Inject constructor(
             }
         }
         onConnect?.invoke()
-    }
-
-    private suspend fun checkConnectedDevice(topic: String): Boolean {
-        val statusMap = deviceConnectionStatusList.first()
-        return statusMap[topic]?.isConnected ?: false
     }
 
     private fun stopService() {

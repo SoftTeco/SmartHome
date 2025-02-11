@@ -119,13 +119,18 @@
     <string name="day">Day</string>
     <string name="month">Month</string>
 
-    <!-- Bluetooth screen -->
+    <!-- Device screen -->
     <string name="device_name">LYWSD03MMC</string>
     <string name="connect">Connect</string>
     <string name="disconnect">Disconnect</string>
     <string name="device_connection_is_running">Device connection is running</string>
     <string name="device_connection_active">Device connection is active</string>
     <string name="device_connection">Device connection</string>
+
+    <!-- Delete device screen -->
+    <string name="delete_device_title">Delete Device</string>
+    <string name="delete_device_message">Are you sure you want to delete %1$s?</string>
+    <string name="delete">Delete</string>
 
     <!-- Bluetooth -->
     <string name="device_connection_notification_channel_id" translatable="false">device_connection_default_channel</string>

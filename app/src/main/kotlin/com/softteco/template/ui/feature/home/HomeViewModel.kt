@@ -10,12 +10,14 @@ import com.softteco.template.data.device.ProtocolType
 import com.softteco.template.data.device.ThermometerRepository
 import com.softteco.template.data.zigbee.ZigbeeHelper
 import com.softteco.template.navigation.Screen
+import com.softteco.template.utils.ZigbeeTopic
 import com.softteco.template.utils.protocol.DeviceConnectionStatus
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.combine
@@ -86,6 +88,36 @@ class HomeViewModel @Inject constructor(
         }
     }
 
+    fun deleteDevice(device: Device) {
+        runBlocking {
+            withContext(Dispatchers.IO) {
+                when (thermometerRepository.deleteDevice(device.macAddress)) {
+                    is Result.Success -> {
+                        when (device.protocolType) {
+                            ProtocolType.ZIGBEE -> {
+                                if (zigbeeHelper.checkConnectedDevice(device.macAddress)) {
+                                    zigbeeHelper.disconnect(ZigbeeTopic.ZIGBEE_DATA_TOPIC.value + device.name)
+                                }
+                            }
+
+                            ProtocolType.BLUETOOTH -> {
+                                if (bluetoothHelper.checkConnectedDevice(device.macAddress)) {
+                                    bluetoothHelper.disconnect(device.macAddress)
+                                }
+                            }
+
+                            else -> {}
+                        }
+                        getDeviceConnectionStatusList()
+                        getDevices()
+                    }
+
+                    is Result.Error -> {}
+                }
+            }
+        }
+    }
+
     fun performDeviceClick(
         onDeviceClick: (Device) -> Unit,
         devicesConnectionStatusList: List<DeviceConnectionStatus>,
@@ -98,9 +130,11 @@ class HomeViewModel @Inject constructor(
                 ProtocolType.ZIGBEE -> {
                     zigbeeHelper.provideConnectionToDeviceViaMacAddress(device.macAddress)
                 }
+
                 ProtocolType.BLUETOOTH -> {
-                    bluetoothHelper.provideConnectionToDeviceViaMacAddress(device.macAddress)
+                    bluetoothHelper.connect(device.macAddress)
                 }
+
                 ProtocolType.UNKNOWN -> {}
             }
         }

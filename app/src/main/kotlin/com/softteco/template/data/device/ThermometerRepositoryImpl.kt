@@ -48,6 +48,18 @@ internal class ThermometerRepositoryImpl @Inject constructor(
     }
 
     @Suppress("TooGenericExceptionCaught")
+    override suspend fun deleteDevice(macAddress: String): Result<Int> {
+        return try {
+            Result.Success(
+                devicesCacheStore.deleteDevice(macAddress)
+            )
+        } catch (e: Exception) {
+            Timber.e(e)
+            Result.Error(AppError.UnknownError())
+        }
+    }
+
+    @Suppress("TooGenericExceptionCaught")
     override suspend fun getThermometerData(macAddress: String): Result<ThermometerData> {
         return try {
             Result.Success(devicesDataCacheStore.getResource(macAddress).toEntity())

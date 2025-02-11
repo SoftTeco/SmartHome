@@ -175,9 +175,9 @@ internal class BluetoothHelperImpl @Inject constructor(
         this.activity = null
     }
 
-    override suspend fun provideConnectionToDevice(bluetoothDevice: BluetoothDevice) {
-        if (checkConnectedDevice(bluetoothDevice)) {
-            disconnectFromDevice(connectedDevicesList[bluetoothDevice.address])
+    override fun provideConnectionToDevice(bluetoothDevice: BluetoothDevice) {
+        if (checkConnectedDevice(bluetoothDevice.address)) {
+            disconnect(bluetoothDevice.address)
         } else {
             bluetoothDevice.connectGatt(
                 activity?.applicationContext,
@@ -188,7 +188,7 @@ internal class BluetoothHelperImpl @Inject constructor(
         }
     }
 
-    override fun provideConnectionToDeviceViaMacAddress(macAddress: String) {
+    override fun connect(macAddress: String) {
         bluetoothAdapter.getRemoteDevice(macAddress)?.let {
             CoroutineScope(Dispatchers.IO).launch {
                 provideConnectionToDevice(it)
@@ -212,13 +212,13 @@ internal class BluetoothHelperImpl @Inject constructor(
         }
     }
 
-    private fun stopScan() {
-        BluetoothLeScannerCompat.getScanner().stopScan(scanCallback)
+    override fun checkConnectedDevice(macAddress: String): Boolean {
+        val statusMap = runBlocking { deviceConnectionStatusList.first() }
+        return statusMap[macAddress]?.isConnected ?: false
     }
 
-    private suspend fun checkConnectedDevice(bluetoothDevice: BluetoothDevice): Boolean {
-        val statusMap = deviceConnectionStatusList.first()
-        return statusMap[bluetoothDevice.address]?.isConnected ?: false
+    private fun stopScan() {
+        BluetoothLeScannerCompat.getScanner().stopScan(scanCallback)
     }
 
     private val mGattCallback: BluetoothGattCallback = object : BluetoothGattCallback() {
@@ -309,7 +309,8 @@ internal class BluetoothHelperImpl @Inject constructor(
         }
     }
 
-    override fun disconnectFromDevice(bluetoothGatt: BluetoothGatt?) {
+    override fun disconnect(macAddress: String) {
+        val bluetoothGatt = connectedDevicesList[macAddress]
         bluetoothGatt?.disconnect()
         readCharacteristicTimestamp = 0L
     }

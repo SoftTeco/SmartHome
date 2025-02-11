@@ -1,6 +1,8 @@
 package com.softteco.template.ui.feature.home
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,6 +21,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -32,6 +35,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
@@ -65,6 +70,8 @@ fun HomeScreen(
 ) {
     val state by viewModel.state.collectAsState()
 
+    val showDeleteDialog = remember { mutableStateOf<Device?>(null) }
+
     LaunchedEffect(Unit) {
         Analytics.homeOpened()
         viewModel.navDestination.onEach { screen ->
@@ -93,9 +100,21 @@ fun HomeScreen(
                 device
             )
         },
+        { device -> showDeleteDialog.value = device },
         { device -> viewModel.isDeviceConnected(device, state.devicesConnectionStatusList) },
         modifier
     )
+
+    showDeleteDialog.value?.let { device ->
+        DeleteDeviceDialog(
+            device = device,
+            onConfirm = {
+                viewModel.deleteDevice(device)
+                showDeleteDialog.value = null
+            },
+            onDismiss = { showDeleteDialog.value = null }
+        )
+    }
 }
 
 @Composable
@@ -105,6 +124,7 @@ private fun ScreenContent(
     onSearchClick: () -> Unit,
     onNotificationsClick: () -> Unit,
     onDeviceClick: (Device) -> Unit,
+    onLongClick: (Device) -> Unit,
     checkConnectionStatus: (Device) -> Boolean?,
     modifier: Modifier = Modifier
 ) {
@@ -135,7 +155,8 @@ private fun ScreenContent(
                     Device(
                         it,
                         checkConnectionStatus(it),
-                        onClick = { onDeviceClick(it) }
+                        onClick = { onDeviceClick(it) },
+                        onLongClick
                     )
                 }
             }
@@ -196,14 +217,21 @@ private fun TopAppBar(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun Device(
     device: Device,
     connectionStatus: Boolean?,
     onClick: () -> Unit,
+    onLongClick: (Device) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    ElevatedCard(onClick = onClick, modifier = modifier) {
+    ElevatedCard(
+        modifier = modifier.combinedClickable(
+            onClick = onClick,
+            onLongClick = { onLongClick(device) }
+        )
+    ) {
         Column(Modifier.padding(PaddingSmall)) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 DeviceImage(
@@ -244,6 +272,29 @@ private fun Device(
     }
 }
 
+@Composable
+private fun DeleteDeviceDialog(
+    device: Device,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.delete_device_title)) },
+        text = { Text(stringResource(R.string.delete_device_message, device.name)) },
+        confirmButton = {
+            TextButton(onClick = onConfirm) {
+                Text(stringResource(R.string.delete))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.cancel))
+            }
+        }
+    )
+}
+
 // region Previews
 
 @Preview(showSystemUi = true)
@@ -256,6 +307,7 @@ private fun Preview() {
             onSearchClick = {},
             onNotificationsClick = {},
             onDeviceClick = {},
+            onLongClick = {},
             checkConnectionStatus = { null }
         )
     }
@@ -271,6 +323,7 @@ private fun PreviewDevices() {
             onSearchClick = {},
             onNotificationsClick = {},
             onDeviceClick = {},
+            onLongClick = {},
             checkConnectionStatus = { null }
         )
     }

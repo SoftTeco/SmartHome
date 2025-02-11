@@ -45,11 +45,7 @@ fun ZigBeeScreen(
 
     ScreenContent(
         state = state,
-        onItemClicked = { deviceName ->
-            CoroutineScope(Dispatchers.IO).launch {
-                viewModel.provideConnectionToDevice(deviceName)
-            }
-        },
+        onItemClicked = { deviceName -> viewModel.provideConnectionToDevice(deviceName) },
         onBackClicked,
         modifier = modifier
     )

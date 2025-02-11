@@ -49,12 +49,12 @@ class ZigBeeViewModel @Inject constructor(
 
     init {
         initCallbacks()
-        zigbeeHelper.connect(ZigbeeTopic.ZIGBEE_DEVICE_TOPIC.value)
+        zigbeeHelper.connectToHub(ZigbeeTopic.ZIGBEE_DEVICE_TOPIC.value)
         getDeviceConnectionStatusList()
     }
 
-    suspend fun provideConnectionToDevice(deviceName: String) {
-        zigbeeHelper.provideConnectionToDevice(ZigbeeTopic.ZIGBEE_DATA_TOPIC.value + deviceName)
+    fun provideConnectionToDevice(deviceName: String) {
+        zigbeeHelper.connect(ZigbeeTopic.ZIGBEE_DATA_TOPIC.value + deviceName)
     }
 
     private fun getDeviceConnectionStatusList() {

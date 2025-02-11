@@ -1,7 +1,6 @@
 package com.softteco.template.data.bluetooth
 
 import android.bluetooth.BluetoothDevice
-import android.bluetooth.BluetoothGatt
 import com.softteco.template.MainActivity
 import com.softteco.template.utils.protocol.DeviceConnectionStatus
 import kotlinx.coroutines.flow.StateFlow
@@ -22,17 +21,17 @@ interface BluetoothHelper {
     /**
      * Connecting to the Bluetooth device.
      */
-    suspend fun provideConnectionToDevice(bluetoothDevice: BluetoothDevice)
+    fun provideConnectionToDevice(bluetoothDevice: BluetoothDevice)
 
     /**
      * Connecting to the Bluetooth device via mac address.
      */
-    fun provideConnectionToDeviceViaMacAddress(macAddress: String)
+    fun connect(macAddress: String)
 
     /**
      * Disconnecting from the Bluetooth device.
      */
-    fun disconnectFromDevice(bluetoothGatt: BluetoothGatt?)
+    fun disconnect(macAddress: String)
 
     /**
      * Register the receiver to track the events of turning the Bluetooth adapter on and off in
@@ -45,6 +44,11 @@ interface BluetoothHelper {
      * relation to displaying the Bluetooth fragment.
      */
     fun unregisterReceiver()
+
+    /**
+     * Checking the device connection status.
+     */
+    fun checkConnectedDevice(macAddress: String): Boolean
 
     /**
      * Checking for the presence of a Bluetooth adapter, that it is turned on, and that the

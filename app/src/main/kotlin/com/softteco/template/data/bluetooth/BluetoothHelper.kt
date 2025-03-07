@@ -1,7 +1,7 @@
 package com.softteco.template.data.bluetooth
 
 import android.bluetooth.BluetoothDevice
-import com.softteco.template.MainActivity
+import com.softteco.template.data.device.protocol.common.DeviceOperationHandler
 import com.softteco.template.utils.protocol.DeviceConnectionStatus
 import kotlinx.coroutines.flow.StateFlow
 import no.nordicsemi.android.support.v18.scanner.ScanResult
@@ -11,17 +11,17 @@ interface BluetoothHelper {
      * Passing the helper class of an Activity instance for the necessary actions when
      * creating an Activity.
      */
-    fun init(activity: MainActivity)
+    fun init(deviceOperationHandler: DeviceOperationHandler)
 
     /**
      * Removing an Activity instance from the helper class when the activity is destroyed.
      */
-    fun drop()
+    fun shutdown()
 
     /**
      * Connecting to the Bluetooth device.
      */
-    fun provideConnectionToDevice(bluetoothDevice: BluetoothDevice)
+    fun provideConnectionToTheDevice(bluetoothDevice: BluetoothDevice)
 
     /**
      * Connecting to the Bluetooth device via mac address.
@@ -54,7 +54,7 @@ interface BluetoothHelper {
      * Checking for the presence of a Bluetooth adapter, that it is turned on, and that the
      * necessary permissions have been given.
      */
-    fun startScanIfHasPermissions()
+    fun startScan()
 
     /**
      * Callback to receive scan results for discoverable Bluetooth devices.

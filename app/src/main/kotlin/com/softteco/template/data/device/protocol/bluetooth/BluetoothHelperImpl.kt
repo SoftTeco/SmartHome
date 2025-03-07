@@ -7,34 +7,29 @@ import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGattCallback
 import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothGattDescriptor
-import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothProfile
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import android.location.LocationManager
 import android.provider.Settings
 import androidx.activity.result.ActivityResultLauncher
-import androidx.activity.result.contract.ActivityResultContracts
 import com.softteco.template.BuildConfig
 import com.softteco.template.Constants.READ_BLUETOOTH_CHARACTERISTIC_DELAY
-import com.softteco.template.MainActivity
 import com.softteco.template.data.base.error.Result
 import com.softteco.template.data.bluetooth.BluetoothByteParser
 import com.softteco.template.data.bluetooth.BluetoothHelper
-import com.softteco.template.data.bluetooth.BluetoothPermissionChecker
 import com.softteco.template.data.bluetooth.BluetoothState
 import com.softteco.template.data.device.Device
 import com.softteco.template.data.device.ProtocolType
 import com.softteco.template.data.device.ThermometerData
 import com.softteco.template.data.device.ThermometerRepository
 import com.softteco.template.data.device.ThermometerValues
+import com.softteco.template.data.device.protocol.common.DeviceOperationHandler
 import com.softteco.template.utils.protocol.DeviceConnectionService
 import com.softteco.template.utils.protocol.DeviceConnectionStatus
-import com.softteco.template.utils.protocol.checkRemainingConnectionForService
-import com.softteco.template.utils.protocol.getDeviceImage
-import com.softteco.template.utils.protocol.getDeviceModel
+import com.softteco.template.utils.protocol.PermissionType
+import com.softteco.template.utils.protocol.getBluetoothAdapter
 import com.softteco.template.utils.protocol.isServiceRunning
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -57,17 +52,12 @@ import javax.inject.Singleton
 @SuppressLint("MissingPermission")
 @Singleton
 internal class BluetoothHelperImpl @Inject constructor(
-    private val bluetoothPermissionChecker: BluetoothPermissionChecker,
     private val bluetoothByteParser: BluetoothByteParser,
     private val thermometerRepository: ThermometerRepository
 ) : BluetoothHelper, BluetoothState {
 
-    private var activity: MainActivity? = null
+    private var deviceOperationHandler: DeviceOperationHandler? = null
     private lateinit var bluetoothReceiver: BroadcastReceiver
-    private lateinit var bluetoothManager: BluetoothManager
-    private lateinit var bluetoothAdapter: BluetoothAdapter
-    private lateinit var locationManager: LocationManager
-    private var resultBluetoothEnableLauncher: ActivityResultLauncher<Intent>? = null
     private var resultLocationEnableLauncher: ActivityResultLauncher<Intent>? = null
     private var savedBluetoothDevices = mutableListOf<Device>()
     override var onConnect: (() -> Unit)? = null
@@ -97,12 +87,13 @@ internal class BluetoothHelperImpl @Inject constructor(
                             Device.Basic(
                                 type = Device.Type.TemperatureAndHumidity,
                                 family = Device.Family.Sensor,
-                                model = activity?.getDeviceModel(it) ?: Device.Model.Unknown,
+                                model = deviceOperationHandler?.getDeviceModel(it)
+                                    ?: Device.Model.Unknown,
                                 id = UUID.randomUUID(),
                                 defaultName = it,
                                 name = "Temperature and Humidity Monitor",
                                 macAddress = scanResult.device.address,
-                                img = activity?.getDeviceImage(it),
+                                img = deviceOperationHandler?.getDeviceImage(it),
                                 location = "",
                                 protocolType = ProtocolType.BLUETOOTH
                             ),
@@ -115,12 +106,8 @@ internal class BluetoothHelperImpl @Inject constructor(
         }
     }
 
-    override fun init(activity: MainActivity) {
-        this.activity = activity
-        resultBluetoothEnableLauncher =
-            this.activity?.registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {}
-        resultLocationEnableLauncher =
-            this.activity?.registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {}
+    override fun init(deviceOperationHandler: DeviceOperationHandler) {
+        this.deviceOperationHandler = deviceOperationHandler
         bluetoothReceiver = object : BroadcastReceiver() {
             override fun onReceive(context: Context, intent: Intent) {
                 when (
@@ -130,7 +117,7 @@ internal class BluetoothHelperImpl @Inject constructor(
                     )
                 ) {
                     BluetoothAdapter.STATE_ON -> {
-                        startScanIfHasPermissions()
+                        startScan()
                         onBluetoothModuleChangeState?.invoke(true)
                     }
 
@@ -142,11 +129,6 @@ internal class BluetoothHelperImpl @Inject constructor(
                 }
             }
         }
-        bluetoothManager =
-            this.activity?.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
-        bluetoothAdapter = bluetoothManager.adapter
-        locationManager =
-            this.activity?.getSystemService(Context.LOCATION_SERVICE) as LocationManager
         runBlocking {
             withContext(Dispatchers.IO) {
                 when (val result = thermometerRepository.getDevices()) {
@@ -169,18 +151,17 @@ internal class BluetoothHelperImpl @Inject constructor(
         }
     }
 
-    override fun drop() {
+    override fun shutdown() {
         stopService()
         unregisterReceiver()
-        this.activity = null
     }
 
-    override fun provideConnectionToDevice(bluetoothDevice: BluetoothDevice) {
+    override fun provideConnectionToTheDevice(bluetoothDevice: BluetoothDevice) {
         if (checkConnectedDevice(bluetoothDevice.address)) {
             disconnect(bluetoothDevice.address)
         } else {
             bluetoothDevice.connectGatt(
-                activity?.applicationContext,
+                deviceOperationHandler?.getContext(),
                 false,
                 mGattCallback,
                 BluetoothDevice.TRANSPORT_LE
@@ -189,15 +170,16 @@ internal class BluetoothHelperImpl @Inject constructor(
     }
 
     override fun connect(macAddress: String) {
-        bluetoothAdapter.getRemoteDevice(macAddress)?.let {
-            CoroutineScope(Dispatchers.IO).launch {
-                provideConnectionToDevice(it)
+        deviceOperationHandler?.getContext()?.getBluetoothAdapter()?.getRemoteDevice(macAddress)
+            ?.let {
+                CoroutineScope(Dispatchers.IO).launch {
+                    provideConnectionToTheDevice(it)
+                }
             }
-        }
     }
 
     override fun registerReceiver() {
-        activity?.registerReceiver(
+        deviceOperationHandler?.registerReceiver(
             bluetoothReceiver,
             IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED)
         )
@@ -206,7 +188,7 @@ internal class BluetoothHelperImpl @Inject constructor(
     @Suppress("TooGenericExceptionCaught")
     override fun unregisterReceiver() {
         try {
-            activity?.unregisterReceiver(bluetoothReceiver)
+            deviceOperationHandler?.unregisterReceiver(bluetoothReceiver)
         } catch (e: Exception) {
             Timber.e("Error unregister receiver", e)
         }
@@ -315,25 +297,16 @@ internal class BluetoothHelperImpl @Inject constructor(
         readCharacteristicTimestamp = 0L
     }
 
-    override fun startScanIfHasPermissions() {
-        activity?.let {
-            if (bluetoothPermissionChecker.checkBluetoothSupport(bluetoothAdapter, it) &&
-                bluetoothPermissionChecker.hasPermissions(it)
-            ) {
-                when (
-                    bluetoothPermissionChecker.checkEnableDeviceModules(
-                        bluetoothAdapter,
-                        locationManager
-                    )
-                ) {
+    override fun startScan() {
+        deviceOperationHandler?.let {
+            if (it.checkBluetoothSupport() && it.hasPermissions()) {
+                when (it.checkEnableDeviceModules()) {
                     PermissionType.LOCATION_TURNED_OFF -> {
-                        val intent = Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)
-                        resultLocationEnableLauncher?.launch(intent)
+                        it.startIntent(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS))
                     }
 
                     PermissionType.BLUETOOTH_TURNED_OFF -> {
-                        val intent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
-                        resultBluetoothEnableLauncher?.launch(intent)
+                        it.startIntent(Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE))
                     }
 
                     PermissionType.BLUETOOTH_AND_LOCATION_TURNED_ON -> {
@@ -394,29 +367,19 @@ internal class BluetoothHelperImpl @Inject constructor(
             }
             it.discoverServices()
             onConnect?.invoke()
-            if (!isServiceRunning(activity, DeviceConnectionService::class.java)) {
-                activity?.startForegroundService(
-                    Intent(
-                        activity,
-                        DeviceConnectionService::class.java
-                    )
-                )
+            if (deviceOperationHandler?.getContext()?.isServiceRunning(DeviceConnectionService::class.java) == false) {
+                deviceOperationHandler?.startConnectionService(DeviceConnectionService::class.java)
             }
         }
     }
 
     private fun stopService() {
-        if (!checkRemainingConnectionForService(
-                getObservableDeviceConnectionStatusList(),
-                activity?.zigbeeHelper?.getObservableDeviceConnectionStatusList()
-            )
-        ) {
-            activity?.stopService(
-                Intent(
-                    activity,
-                    DeviceConnectionService::class.java
-                )
-            )
-        }
+//        if (!checkRemainingConnectionForService(
+//                getObservableDeviceConnectionStatusList(),
+//                activity?.zigbeeHelper?.getObservableDeviceConnectionStatusList()
+//            )
+//        ) {
+            deviceOperationHandler?.stopConnectionService(DeviceConnectionService::class.java)
+//        }
     }
 }

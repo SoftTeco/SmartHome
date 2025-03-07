@@ -68,11 +68,11 @@ class BluetoothViewModel @Inject constructor(
     }
 
     fun startScanIfHasPermissions() {
-        bluetoothHelper.startScanIfHasPermissions()
+        bluetoothHelper.startScan()
     }
 
-    suspend fun provideConnectionToDevice(bluetoothDevice: BluetoothDevice) {
-        bluetoothHelper.provideConnectionToDevice(bluetoothDevice)
+    fun provideConnectionToDevice(bluetoothDevice: BluetoothDevice) {
+        bluetoothHelper.provideConnectionToTheDevice(bluetoothDevice)
     }
 
     private fun addScanResult(scanResult: ScanResult) {

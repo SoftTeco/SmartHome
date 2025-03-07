@@ -209,14 +209,14 @@ internal class ZigbeeHelperImpl @Inject constructor(
 
                         topic.contains(ZigbeeTopic.ZIGBEE_DATA_TOPIC.value.plus(deviceName)) -> {
                             provideConnectedState(asyncActionToken.topics[0].split("/")[1])
-                            if (!isServiceRunning(activity, DeviceConnectionService::class.java)) {
-                                activity?.startForegroundService(
-                                    Intent(
-                                        activity,
-                                        DeviceConnectionService::class.java
-                                    )
-                                )
-                            }
+//                            if (!isServiceRunning(activity, DeviceConnectionService::class.java)) {
+//                                activity?.startForegroundService(
+//                                    Intent(
+//                                        activity,
+//                                        DeviceConnectionService::class.java
+//                                    )
+//                                )
+//                            }
                         }
                     }
                 }

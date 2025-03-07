@@ -1,12 +1,9 @@
 package com.softteco.template.utils.protocol
 
 import android.annotation.SuppressLint
-import android.app.ActivityManager
-import android.app.Service
 import android.bluetooth.BluetoothDevice
 import android.content.Context
 import com.softteco.template.Constants.BIT_SHIFT_VALUE
-import com.softteco.template.MainActivity
 import com.softteco.template.R
 import com.softteco.template.data.device.Device
 import com.softteco.template.data.device.ProtocolType
@@ -54,16 +51,10 @@ fun getProtocolImage(protocolType: ProtocolType): String = when (protocolType) {
     ProtocolType.UNKNOWN -> UNKNOWN_IMAGE
 }
 
-fun isServiceRunning(activity: MainActivity?, serviceClass: Class<out Service>): Boolean {
-    val manager = activity?.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager
-    val services = manager?.getRunningServices(Int.MAX_VALUE) ?: return false
-    return services.any { it.service.className == serviceClass.name }
-}
-
 fun checkRemainingConnectionForService(
     bluetoothDevicesConnectionStatusList: StateFlow<Map<String, DeviceConnectionStatus>>?,
     zigbeeDevicesConnectionStatusList: StateFlow<Map<String, DeviceConnectionStatus>>?
 ) = (
-    bluetoothDevicesConnectionStatusList?.value?.values?.any { it.isConnected } == true ||
-        zigbeeDevicesConnectionStatusList?.value?.values?.any { it.isConnected } == true
-    )
+        bluetoothDevicesConnectionStatusList?.value?.values?.any { it.isConnected } == true ||
+                zigbeeDevicesConnectionStatusList?.value?.values?.any { it.isConnected } == true
+        )

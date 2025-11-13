@@ -48,11 +48,11 @@ class BluetoothViewModel @Inject constructor(
     )
 
     fun initCallbacks() {
-        onScanCallback {
+        onScanResult {
             addScanResult(it)
         }
 
-        onBluetoothModuleChangeStateCallback {
+        onBluetoothStateChanged {
             if (!it) {
                 clearScanResult()
             }
@@ -60,19 +60,19 @@ class BluetoothViewModel @Inject constructor(
     }
 
     fun registerReceiver() {
-        bluetoothHelper.registerReceiver()
+        bluetoothHelper.registerBluetoothReceiver()
     }
 
     fun unregisterReceiver() {
-        bluetoothHelper.unregisterReceiver()
+        bluetoothHelper.unregisterBluetoothReceiver()
     }
 
-    fun startScanIfHasPermissions() {
+    fun startScan() {
         bluetoothHelper.startScan()
     }
 
-    fun provideConnectionToDevice(bluetoothDevice: BluetoothDevice) {
-        bluetoothHelper.provideConnectionToTheDevice(bluetoothDevice)
+    fun connectToDevice(bluetoothDevice: BluetoothDevice) {
+        bluetoothHelper.connectDevice(bluetoothDevice)
     }
 
     private fun addScanResult(scanResult: ScanResult) {
@@ -84,17 +84,17 @@ class BluetoothViewModel @Inject constructor(
         _devices.value = emptyList()
     }
 
-    private fun onScanCallback(onScanResult: (scanResult: ScanResult) -> Unit) {
-        bluetoothHelper.onScanCallback(onScanResult)
+    private fun onScanResult(callback: (scanResult: ScanResult) -> Unit) {
+        bluetoothHelper.onScanResult(callback)
     }
 
-    private fun onBluetoothModuleChangeStateCallback(onBluetoothModuleChangeState: (ifTurnOn: Boolean) -> Unit) {
-        bluetoothHelper.onBluetoothModuleChangeStateCallback(onBluetoothModuleChangeState)
+    private fun onBluetoothStateChanged(callback: (isEnabled: Boolean) -> Unit) {
+        bluetoothHelper.onBluetoothStateChanged(callback)
     }
 
     fun getDeviceConnectionStatusList() {
         viewModelScope.launch {
-            bluetoothHelper.getObservableDeviceConnectionStatusList().collect { statusList ->
+            bluetoothHelper.observeDeviceConnectionStatus().collect { statusList ->
                 _deviceConnectionStatusList.value = statusList.values.toMutableList()
             }
         }

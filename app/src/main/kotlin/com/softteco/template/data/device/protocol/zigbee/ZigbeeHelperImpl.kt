@@ -1,362 +1,242 @@
 package com.softteco.template.data.device.protocol.zigbee
 
-import android.content.Intent
-import com.softteco.template.BuildConfig
-import com.softteco.template.Constants.ZIGBEE_BUFFER_SIZE
-import com.softteco.template.MainActivity
-import com.softteco.template.data.base.error.Result
-import com.softteco.template.data.device.Device
-import com.softteco.template.data.device.ProtocolType
-import com.softteco.template.data.device.ThermometerData
+import android.content.Context
+import com.softteco.template.data.bluetooth.BluetoothHelper
 import com.softteco.template.data.device.ThermometerRepository
-import com.softteco.template.data.device.ThermometerValues
+import com.softteco.template.data.device.protocol.common.DeviceOperationHandler
 import com.softteco.template.data.zigbee.ZigbeeHelper
 import com.softteco.template.data.zigbee.ZigbeeState
 import com.softteco.template.utils.ZigbeeDevice
 import com.softteco.template.utils.ZigbeeTopic
-import com.softteco.template.utils.parseZigbeeDevices
 import com.softteco.template.utils.protocol.DeviceConnectionService
 import com.softteco.template.utils.protocol.DeviceConnectionStatus
 import com.softteco.template.utils.protocol.checkRemainingConnectionForService
-import com.softteco.template.utils.protocol.getDeviceImage
-import com.softteco.template.utils.protocol.getDeviceModel
 import com.softteco.template.utils.protocol.isServiceRunning
-import info.mqtt.android.service.MqttAndroidClient
-import info.mqtt.android.service.QoS
+import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withContext
-import org.eclipse.paho.client.mqttv3.DisconnectedBufferOptions
-import org.eclipse.paho.client.mqttv3.IMqttActionListener
-import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken
-import org.eclipse.paho.client.mqttv3.IMqttToken
-import org.eclipse.paho.client.mqttv3.MqttCallbackExtended
-import org.eclipse.paho.client.mqttv3.MqttConnectOptions
-import org.eclipse.paho.client.mqttv3.MqttMessage
-import org.json.JSONObject
-import java.time.LocalDateTime
-import java.util.UUID
+import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
 
+/**
+ * Main coordinator for Zigbee operations.
+ * Delegates responsibilities to specialized managers.
+ */
 @Singleton
 internal class ZigbeeHelperImpl @Inject constructor(
-    private val thermometerRepository: ThermometerRepository
+    @ApplicationContext private val context: Context,
+    private val thermometerRepository: ThermometerRepository,
+    private val bluetoothHelper: BluetoothHelper
 ) : ZigbeeHelper, ZigbeeState {
 
-    private var activity: MainActivity? = null
-    private var mqttAndroidClient: MqttAndroidClient? = null
-    private var connectedToHub: Boolean = false
-    override var onConnect: (() -> Unit)? = null
-    override var onDisconnect: (() -> Unit)? = null
-    override var onScanResult: ((device: ZigbeeDevice) -> Unit)? = null
-    override var onDeviceResult: (() -> Unit)? = null
-    override var onSubscribed: (() -> Unit)? = null
-    override var onUnsubscribed: (() -> Unit)? = null
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
-    private val _deviceConnectionStatusList =
-        MutableStateFlow<Map<String, DeviceConnectionStatus>>(emptyMap())
-    private val deviceConnectionStatusList: StateFlow<Map<String, DeviceConnectionStatus>> =
-        _deviceConnectionStatusList
-    private var savedZigBeeDevices = mutableListOf<Device>()
+    private lateinit var deviceOperationHandler: DeviceOperationHandler
 
-    override fun init(activity: MainActivity) {
-        this.activity = activity
-        mqttAndroidClient = MqttAndroidClient(
-            activity.applicationContext,
-            BuildConfig.ZIGBEE_SERVER_URL_VALUE,
-            UUID.randomUUID().toString()
-        )
-        setCallbacks()
-        runBlocking {
-            withContext(Dispatchers.IO) {
-                when (val result = thermometerRepository.getDevices()) {
-                    is Result.Success -> {
-                        result.data.filter { it.protocolType == ProtocolType.ZIGBEE }.let {
-                            savedZigBeeDevices.addAll(it)
-                            it.forEach {
-                                _deviceConnectionStatusList.update { currentMap ->
-                                    currentMap.toMutableMap().apply {
-                                        this[it.macAddress] = DeviceConnectionStatus(it, false)
-                                    }
-                                }
-                            }
-                        }
-                    }
+    private val deviceRepository: ZigbeeDeviceRepository
+    private lateinit var connectionManager: ZigbeeConnectionManager
+    private lateinit var scanManager: ZigbeeScanManager
+    private lateinit var mqttHandler: ZigbeeMqttCallbackHandler
 
-                    is Result.Error -> {}
-                }
-            }
-        }
+    override var deviceConnectedCallback: (() -> Unit)? = null
+    override var deviceDisconnectedCallback: (() -> Unit)? = null
+    override var scanResultCallback: ((device: ZigbeeDevice) -> Unit)? = null
+    override var deviceDataReceivedCallback: (() -> Unit)? = null
+    override var subscribedCallback: (() -> Unit)? = null
+    override var unsubscribedCallback: (() -> Unit)? = null
+
+    init {
+        deviceRepository = ZigbeeDeviceRepository(thermometerRepository, scope)
+    }
+
+    override fun init(deviceOperationHandler: DeviceOperationHandler) {
+        this.deviceOperationHandler = deviceOperationHandler
+        
+        initializeManagers()
+        deviceRepository.loadSavedDevices()
+    }
+
+    override fun clearResources() {
+        scope.cancel()
+        connectionManager.disconnect()
+        stopConnectionService()
     }
 
     override fun connectToHub(topic: String) {
-        val mqttConnectOptions = MqttConnectOptions()
-        mqttConnectOptions.isAutomaticReconnect = true
-        mqttConnectOptions.isCleanSession = false
-
-        mqttAndroidClient?.connect(
-            mqttConnectOptions,
-            null,
-            object : IMqttActionListener {
-                override fun onSuccess(asyncActionToken: IMqttToken) {
-                    val disconnectedBufferOptions = DisconnectedBufferOptions()
-                    disconnectedBufferOptions.isBufferEnabled = true
-                    disconnectedBufferOptions.bufferSize = ZIGBEE_BUFFER_SIZE
-                    disconnectedBufferOptions.isPersistBuffer = false
-                    disconnectedBufferOptions.isDeleteOldestMessages = false
-                    mqttAndroidClient?.setBufferOpts(disconnectedBufferOptions)
-                    connectedToHub = true
-                    subscribeToTopic(topic)
-                }
-
-                override fun onFailure(asyncActionToken: IMqttToken?, exception: Throwable?) {
-                    connectedToHub = false
-                    onDisconnect?.invoke()
-                }
+        connectionManager.connectToHub(
+            topic = topic,
+            onSuccess = {
+                deviceConnectedCallback?.invoke()
+            },
+            onFailure = {
+                deviceDisconnectedCallback?.invoke()
             }
         )
-    }
-
-
-
-    override fun disconnect(topic: String) {
-        unsubscribeFromTopic(topic)
-    }
-
-    override fun drop() {
-        stopService()
-        mqttAndroidClient?.disconnect()
-        this.activity = null
     }
 
     override fun connect(topic: String) {
         runBlocking {
-            if (checkConnectedDevice(topic.split("/")[1])) {
-                unsubscribeFromTopic(topic)
+            val macAddress = topic.split("/")[1]
+            if (checkConnectedDevice(macAddress)) {
+                disconnect(topic)
             } else {
-                subscribeToTopic(topic)
+                setDeviceConnecting(macAddress)
+                subscribeToDeviceTopic(topic)
             }
         }
     }
 
-    override fun provideConnectionToDeviceViaMacAddress(macAddress: String) {
-        if (connectedToHub) {
-            subscribeToTopic(ZigbeeTopic.ZIGBEE_DATA_TOPIC.value.plus(macAddress))
+    override fun disconnect(topic: String) {
+        connectionManager.unsubscribeFromTopic(
+            topic = topic,
+            onSuccess = {
+                handleDeviceDisconnected(topic)
+            },
+            onFailure = {
+                unsubscribedCallback?.invoke()
+            }
+        )
+    }
+
+    override fun connectViaMacAddress(macAddress: String) {
+        val topic = ZigbeeTopic.ZIGBEE_DATA_TOPIC.value + macAddress
+
+        setDeviceConnecting(macAddress)
+
+        if (connectionManager.isConnectedToHub()) {
+            subscribeToDeviceTopic(topic)
         } else {
-            connectToHub(ZigbeeTopic.ZIGBEE_DATA_TOPIC.value.plus(macAddress))
+            connectToHub(topic)
         }
     }
 
-    override fun onScanCallback(onScanResult: (device: ZigbeeDevice) -> Unit) {
-        this.onScanResult = onScanResult
+    override fun onScanResult(callback: (device: ZigbeeDevice) -> Unit) {
+        this.scanResultCallback = callback
     }
 
-    override fun onDeviceResultCallback(onDeviceResult: () -> Unit) {
-        this.onDeviceResult = onDeviceResult
+    override fun onDeviceDataReceived(callback: () -> Unit) {
+        this.deviceDataReceivedCallback = callback
     }
 
-    override fun getObservableDeviceConnectionStatusList() = deviceConnectionStatusList
+    override fun onDeviceConnected(callback: () -> Unit) {
+        this.deviceConnectedCallback = callback
+    }
+
+    override fun onDeviceDisconnected(callback: () -> Unit) {
+        this.deviceDisconnectedCallback = callback
+    }
+
+    override fun observeDeviceConnectionStatus(): StateFlow<Map<String, DeviceConnectionStatus>> =
+        deviceRepository.deviceConnectionStatusList
 
     override fun checkConnectedDevice(topic: String): Boolean {
-        val statusMap = runBlocking { deviceConnectionStatusList.first() }
+        val statusMap = runBlocking { deviceRepository.deviceConnectionStatusList.first() }
         return statusMap[topic]?.isConnected ?: false
     }
 
-    private fun setCallbacks() {
-        mqttAndroidClient?.setCallback(object : MqttCallbackExtended {
-            override fun connectComplete(reconnect: Boolean, serverURI: String) {
-                if (reconnect) {
-                    onConnect?.invoke()
-                } else {
-                    onConnect?.invoke()
-                }
-            }
+    // Private functions
 
-            override fun connectionLost(cause: Throwable?) {
-                onDisconnect?.invoke()
-                stopService()
-                _deviceConnectionStatusList.update { currentMap ->
-                    currentMap.mapValues { (_, status) ->
-                        if (status.device.protocolType == ProtocolType.ZIGBEE) {
-                            status.copy(isConnected = false)
-                        } else {
-                            status
-                        }
-                    }
-                }
-            }
-
-            override fun messageArrived(topic: String, message: MqttMessage) {}
-
-            override fun deliveryComplete(token: IMqttDeliveryToken) {}
-        })
-    }
-
-    private fun subscribeToTopic(topic: String, deviceName: String = "") {
-        mqttAndroidClient?.subscribe(
-            topic,
-            QoS.AtMostOnce.value,
-            null,
-            object : IMqttActionListener {
-                override fun onSuccess(asyncActionToken: IMqttToken) {
-                    when {
-                        topic.contains(ZigbeeTopic.ZIGBEE_DEVICE_TOPIC.value) -> {}
-
-                        topic.contains(ZigbeeTopic.ZIGBEE_DATA_TOPIC.value.plus(deviceName)) -> {
-                            provideConnectedState(asyncActionToken.topics[0].split("/")[1])
-//                            if (!isServiceRunning(activity, DeviceConnectionService::class.java)) {
-//                                activity?.startForegroundService(
-//                                    Intent(
-//                                        activity,
-//                                        DeviceConnectionService::class.java
-//                                    )
-//                                )
-//                            }
-                        }
-                    }
-                }
-
-                override fun onFailure(asyncActionToken: IMqttToken?, exception: Throwable?) {
-                    onUnsubscribed?.invoke()
-                }
-            }
+    private fun initializeManagers() {
+        // Initialize scan manager first (without MQTT client reference)
+        scanManager = ZigbeeScanManager(
+            deviceOperationHandler = deviceOperationHandler,
+            onDeviceDiscovered = deviceRepository::updateDeviceStatus,
+            onScanResultCallback = scanResultCallback
         )
-
-        mqttAndroidClient?.subscribe(
-            topic,
-            QoS.AtMostOnce.value
-        ) { receivedTopic, message ->
-            val macAddress = receivedTopic.split("/")[1]
-            when (receivedTopic) {
-                ZigbeeTopic.ZIGBEE_DATA_TOPIC.value.plus(macAddress) -> {
-                    onDeviceResult?.invoke()
-                    JSONObject(String(message.payload)).let {
-                        runBlocking {
-                            withContext(Dispatchers.IO) {
-                                thermometerRepository.saveCurrentMeasurement(
-                                    ThermometerValues.DataLYWSD03MMC(
-                                        it["temperature"] as Double,
-                                        (it["humidity"] as Double).toInt(),
-                                        (it["battery"] as Int).toDouble(),
-                                        macAddress,
-                                        LocalDateTime.now(),
-                                    )
-                                )
-                            }
-                        }
-                    }
-                }
-
-                ZigbeeTopic.ZIGBEE_DEVICE_TOPIC.value -> {
-                    val devicesJson = String(message.payload)
-                    val devices = parseZigbeeDevices(devicesJson)
-                    devices.forEach { device ->
-                        device.modelId?.let {
-                            _deviceConnectionStatusList.update { currentMap ->
-                                currentMap.toMutableMap().apply {
-                                    this[device.ieeeAddress] = DeviceConnectionStatus(
-                                        Device.Basic(
-                                            type = Device.Type.TemperatureAndHumidity,
-                                            family = Device.Family.Sensor,
-                                            model = activity?.getDeviceModel(device.modelId)
-                                                ?: Device.Model.Unknown,
-                                            id = UUID.randomUUID(),
-                                            defaultName = device.modelId,
-                                            name = "Temperature and Humidity Monitor",
-                                            macAddress = device.ieeeAddress,
-                                            img = activity?.getDeviceImage(device.modelId),
-                                            location = "",
-                                            protocolType = ProtocolType.ZIGBEE
-                                        ),
-                                        false
-                                    )
-                                }
-                            }
-                            onScanResult?.invoke(device)
-                        }
-                    }
-                }
-
-                else -> {}
-            }
-        }
+        
+        // Initialize MQTT callback handler
+        mqttHandler = ZigbeeMqttCallbackHandler(
+            thermometerRepository = thermometerRepository,
+            deviceRepository = deviceRepository,
+            scope = scope,
+            scanManager = scanManager,
+            onConnectionComplete = ::handleConnectionComplete,
+            onConnectionLost = ::handleConnectionLost,
+            onDeviceDataReceived = { deviceDataReceivedCallback?.invoke() }
+        )
+        
+        // Initialize connection manager with callback handler
+        connectionManager = ZigbeeConnectionManager(
+            context = context,
+            mqttCallback = mqttHandler
+        )
+        
+        connectionManager.initializeClient()
     }
 
-    private fun unsubscribeFromTopic(topic: String) {
-        mqttAndroidClient?.unsubscribe(
-            topic,
-            null,
-            object : IMqttActionListener {
-                override fun onSuccess(asyncActionToken: IMqttToken) {
-                    when {
-                        topic.contains(ZigbeeTopic.ZIGBEE_DEVICE_TOPIC.value) -> {
-                        }
+    private fun handleConnectionComplete(@Suppress("UNUSED_PARAMETER") reconnect: Boolean) {
+        deviceConnectedCallback?.invoke()
+    }
 
-                        topic.contains(ZigbeeTopic.ZIGBEE_DATA_TOPIC.value) -> {
-                            val macAddress = topic.split("/")[1]
-                            _deviceConnectionStatusList.update { currentMap ->
-                                currentMap.toMutableMap().apply {
-                                    this[macAddress]?.let { status ->
-                                        val updatedStatus = status.copy(isConnected = false)
-                                        this[macAddress] = updatedStatus
-                                    }
-                                }
-                            }
-                            stopService()
-                        }
-                    }
-                }
+    private fun handleConnectionLost() {
+        deviceDisconnectedCallback?.invoke()
+        stopConnectionService()
+    }
 
-                override fun onFailure(asyncActionToken: IMqttToken?, exception: Throwable?) {
-                    onUnsubscribed?.invoke()
-                }
+    private fun subscribeToDeviceTopic(topic: String) {
+        val macAddress = topic.split("/")[1]
+        
+        connectionManager.subscribeToTopic(
+            topic = topic,
+            onSuccess = {
+                handleDeviceConnected(macAddress)
+            },
+            onFailure = {
+                unsubscribedCallback?.invoke()
             }
         )
     }
 
-    private fun provideConnectedState(deviceAddress: String) {
-        _deviceConnectionStatusList.update { currentMap ->
-            currentMap.toMutableMap().apply {
-                this[deviceAddress]?.let { status ->
-                    val updatedStatus = status.copy(isConnected = true)
-                    this[deviceAddress] = updatedStatus
-                    if (savedZigBeeDevices.none { o -> o.macAddress == deviceAddress }) {
-                        runBlocking {
-                            withContext(Dispatchers.IO) {
-                                thermometerRepository.saveDevice(status.device)
-                                thermometerRepository.saveThermometerData(
-                                    ThermometerData(
-                                        deviceId = status.device.id,
-                                        deviceName = status.device.name,
-                                        macAddress = status.device.macAddress
-                                    )
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        onConnect?.invoke()
+    private fun setDeviceConnecting(macAddress: String) {
+        val currentStatus = deviceRepository.getDeviceStatus(macAddress) ?: return
+        val updatedStatus = DeviceConnectionStatus.connecting(currentStatus.device)
+        deviceRepository.updateDeviceStatus(macAddress, updatedStatus)
     }
 
-    private fun stopService() {
+    private fun handleDeviceConnected(macAddress: String) {
+        val currentStatus = deviceRepository.getDeviceStatus(macAddress) ?: run {
+            Timber.w("Device not found for address: $macAddress")
+            return
+        }
+        
+        val updatedStatus = DeviceConnectionStatus.connected(currentStatus.device)
+        deviceRepository.updateDeviceStatus(macAddress, updatedStatus)
+        deviceRepository.saveNewDevice(currentStatus.device)
+        
+        deviceConnectedCallback?.invoke()
+        startConnectionServiceIfNeeded()
+    }
+
+    private fun handleDeviceDisconnected(topic: String) {
+        val macAddress = topic.split("/")[1]
+        val currentStatus = deviceRepository.getDeviceStatus(macAddress) ?: return
+        
+        val updatedStatus = DeviceConnectionStatus.disconnected(currentStatus.device)
+        deviceRepository.updateDeviceStatus(macAddress, updatedStatus)
+        
+        stopConnectionService()
+    }
+
+    private fun startConnectionServiceIfNeeded() {
+        if (!isServiceRunning(DeviceConnectionService::class.java)) {
+            deviceOperationHandler.startConnectionService(DeviceConnectionService::class.java)
+        }
+    }
+
+    private fun stopConnectionService() {
+        // Check if there are any remaining connections before stopping the service
         if (!checkRemainingConnectionForService(
-                activity?.bluetoothHelper?.getObservableDeviceConnectionStatusList(),
-                getObservableDeviceConnectionStatusList()
+                bluetoothHelper.observeDeviceConnectionStatus(),
+                deviceRepository.deviceConnectionStatusList
             )
         ) {
-            activity?.stopService(
-                Intent(
-                    activity,
-                    DeviceConnectionService::class.java
-                )
-            )
+            deviceOperationHandler.stopConnectionService(DeviceConnectionService::class.java)
         }
     }
 }

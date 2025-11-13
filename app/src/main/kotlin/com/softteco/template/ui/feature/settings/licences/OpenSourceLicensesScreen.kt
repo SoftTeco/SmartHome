@@ -16,7 +16,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.ClickableText
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Divider
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -124,7 +124,7 @@ fun ItemView(
                 .fillMaxWidth()
         )
 
-        Divider(Modifier.padding(horizontal = PaddingDefault))
+        HorizontalDivider(Modifier.padding(horizontal = PaddingDefault))
 
         if (showDialog) {
             AlertDialog(

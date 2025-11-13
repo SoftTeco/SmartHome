@@ -36,7 +36,6 @@ import com.patrykandpatrick.vico.core.cartesian.marker.CartesianMarker
 import com.patrykandpatrick.vico.core.cartesian.marker.DefaultCartesianMarker
 import com.patrykandpatrick.vico.core.common.Dimensions
 import com.patrykandpatrick.vico.core.common.component.TextComponent
-import com.patrykandpatrick.vico.core.common.copyColor
 import com.patrykandpatrick.vico.core.common.shape.Corner
 import com.patrykandpatrick.vico.core.common.shape.Shape
 
@@ -88,7 +87,7 @@ internal fun rememberMarker(
                 setIndicatorColor =
                 if (showIndicator) {
                     { color ->
-                        indicatorRearComponent.color = color.copyColor(alpha = .15f)
+                        indicatorRearComponent.color = (color and 0x00FFFFFF) or (((0.15f * 255).toInt()) shl 24)
                         indicatorCenterComponent.color = color
                         indicatorCenterComponent.setShadow(radius = 12f, color = color)
                     }

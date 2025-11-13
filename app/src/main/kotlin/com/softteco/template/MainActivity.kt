@@ -20,7 +20,11 @@ import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowCompat
 import com.softteco.template.data.bluetooth.BluetoothHelper
 import com.softteco.template.data.device.Device
+import com.softteco.template.data.device.protocol.common.BluetoothStateChecker
 import com.softteco.template.data.device.protocol.common.DeviceOperationHandler
+import com.softteco.template.data.device.protocol.common.IntentLauncher
+import com.softteco.template.data.device.protocol.common.PermissionHandler
+import com.softteco.template.data.device.protocol.common.ReceiverManager
 import com.softteco.template.data.zigbee.ZigbeeHelper
 import com.softteco.template.navigation.Graph
 import com.softteco.template.ui.AppContent
@@ -39,7 +43,12 @@ import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
 @AndroidEntryPoint
-class MainActivity : ComponentActivity(), DeviceOperationHandler {
+class MainActivity : ComponentActivity(), 
+    DeviceOperationHandler, 
+    PermissionHandler, 
+    IntentLauncher, 
+    ReceiverManager,
+    BluetoothStateChecker {
 
     private val viewModel: MainViewModel by viewModels()
 
@@ -61,8 +70,16 @@ class MainActivity : ComponentActivity(), DeviceOperationHandler {
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
-        bluetoothHelper.init(this)
-        zigbeeHelper.init(this)
+        bluetoothHelper.init(
+            deviceOperationHandler = this,
+            permissionHandler = this,
+            intentLauncher = this,
+            receiverManager = this,
+            stateChecker = this
+        )
+        zigbeeHelper.init(
+            deviceOperationHandler = this
+        )
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
         setContent {
@@ -104,25 +121,16 @@ class MainActivity : ComponentActivity(), DeviceOperationHandler {
 
     override fun onDestroy() {
         super.onDestroy()
-        bluetoothHelper.shutdown()
-        zigbeeHelper.drop()
+        bluetoothHelper.clearResources()
+        zigbeeHelper.clearResources()
     }
 
-    override fun getContext(): Context = applicationContext
-
+    // DeviceOperationHandler interface methods
     override fun getDeviceModel(deviceName: String): Device.Model =
         applicationContext.getDeviceModel(deviceName)
 
     override fun getDeviceImage(deviceName: String): String =
         applicationContext.getDeviceImage(deviceName)
-
-    override fun startIntent(intent: Intent) {
-        resultIntentLauncher.launch(intent)
-    }
-
-    override fun registerReceiver(receiver: BroadcastReceiver, filter: IntentFilter) {
-        registerCustomReceiver(receiver, filter)
-    }
 
     override fun startConnectionService(serviceClass: Class<out Service>) {
         applicationContext.startConnectionService(serviceClass)
@@ -132,9 +140,28 @@ class MainActivity : ComponentActivity(), DeviceOperationHandler {
         applicationContext.stopConnectionService(serviceClass)
     }
 
-    override fun checkBluetoothSupport() = applicationContext.checkBluetoothSupport()
+    // PermissionHandler interface methods
+    override fun hasBluetoothPermissions(): Boolean = 
+        (this as Activity).hasPermissions()
 
-    override fun checkEnableDeviceModules() = applicationContext.checkEnableDeviceModules()
+    // IntentLauncher interface methods
+    override fun launchIntent(intent: Intent) {
+        resultIntentLauncher.launch(intent)
+    }
 
-    override fun hasPermissions() = (this as Activity).hasPermissions()
+    // ReceiverManager interface methods
+    override fun registerReceiver(receiver: BroadcastReceiver, filter: IntentFilter) {
+        registerCustomReceiver(receiver, filter)
+    }
+
+    override fun unregisterReceiver(receiver: BroadcastReceiver) {
+        super.unregisterReceiver(receiver)
+    }
+
+    // BluetoothStateChecker interface methods
+    override fun isBluetoothSupported(): Boolean = 
+        applicationContext.checkBluetoothSupport()
+
+    override fun checkModulesState() = 
+        applicationContext.checkEnableDeviceModules()
 }

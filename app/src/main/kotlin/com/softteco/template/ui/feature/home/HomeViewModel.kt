@@ -63,8 +63,8 @@ class HomeViewModel @Inject constructor(
 
     fun getDeviceConnectionStatusList() {
         combine(
-            zigbeeHelper.getObservableDeviceConnectionStatusList(),
-            bluetoothHelper.getObservableDeviceConnectionStatusList()
+            zigbeeHelper.observeDeviceConnectionStatus(),
+            bluetoothHelper.observeDeviceConnectionStatus()
         ) { zigbeeStatusList, bluetoothStatusList ->
             val combinedList = mutableListOf<DeviceConnectionStatus>().apply {
                 addAll(zigbeeStatusList.values)
@@ -128,7 +128,7 @@ class HomeViewModel @Inject constructor(
         } else {
             when (device.protocolType) {
                 ProtocolType.ZIGBEE -> {
-                    zigbeeHelper.provideConnectionToDeviceViaMacAddress(device.macAddress)
+                    zigbeeHelper.connectViaMacAddress(device.macAddress)
                 }
 
                 ProtocolType.BLUETOOTH -> {

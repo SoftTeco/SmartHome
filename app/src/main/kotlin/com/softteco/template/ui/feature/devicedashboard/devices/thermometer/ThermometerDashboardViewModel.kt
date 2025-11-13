@@ -117,14 +117,14 @@ class ThermometerDashboardViewModel @Inject constructor(
         }
     }
 
-    fun onDeviceResultCallback(onDeviceResult: () -> Unit) {
+    fun onDeviceDataReceived(callback: () -> Unit) {
         when (ProtocolType.fromString(state.value.deviceProtocol)) {
             ProtocolType.ZIGBEE -> {
-                zigbeeHelper.onDeviceResultCallback(onDeviceResult)
+                zigbeeHelper.onDeviceDataReceived(callback)
             }
 
             ProtocolType.BLUETOOTH -> {
-                bluetoothHelper.onDeviceResultCallback(onDeviceResult)
+                bluetoothHelper.onDeviceDataReceived(callback)
             }
 
             else -> {}

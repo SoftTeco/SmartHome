@@ -59,20 +59,20 @@ class ZigBeeViewModel @Inject constructor(
 
     private fun getDeviceConnectionStatusList() {
         viewModelScope.launch {
-            zigbeeHelper.getObservableDeviceConnectionStatusList().collect { statusList ->
+            zigbeeHelper.observeDeviceConnectionStatus().collect { statusList ->
                 _deviceConnectionStatusList.value = statusList.values.toMutableList()
             }
         }
     }
 
     private fun initCallbacks() {
-        onScanCallback {
+        onScanResult {
             addScanResult(it)
         }
     }
 
-    private fun onScanCallback(onScanResult: (device: ZigbeeDevice) -> Unit) {
-        zigbeeHelper.onScanCallback(onScanResult)
+    private fun onScanResult(callback: (device: ZigbeeDevice) -> Unit) {
+        zigbeeHelper.onScanResult(callback)
     }
 
     private fun addScanResult(device: ZigbeeDevice) {

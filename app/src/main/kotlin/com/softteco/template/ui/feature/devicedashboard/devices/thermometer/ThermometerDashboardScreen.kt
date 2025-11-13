@@ -61,12 +61,12 @@ fun ThermometerDashboardScreen(
         state,
         updateCurrentMeasurement = { unit, type -> viewModel.getCurrentMeasurement(unit, type) },
         updateThermometerHistoryByInterval = { unit, type -> viewModel.updateThermometerHistoryByInterval(unit, type) },
-        updateCharts = { callback -> viewModel.onDeviceResultCallback(callback) },
+        updateCharts = { callback -> viewModel.onDeviceDataReceived(callback) },
         onSettingsClick = onSettingsClick,
         modifier = modifier,
         onBackClicked = onBackClicked
     )
-    OnLifecycleEvent { owner, event ->
+    OnLifecycleEvent { _, event ->
         when (event) {
             Lifecycle.Event.ON_RESUME -> {
                 viewModel.getThermometerHistory()

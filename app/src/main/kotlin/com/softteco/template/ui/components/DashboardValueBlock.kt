@@ -26,6 +26,14 @@ fun <T> DashboardValueBlock(
     modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
+    val displayValue = when (value) {
+        null -> "-"
+        is Double -> if (value == 0.0) "-" else value.toString()
+        is Int -> if (value == 0) "-" else value.toString()
+        is Float -> if (value == 0.0f) "-" else value.toString()
+        else -> value.toString()
+    }
+    
     ElevatedCard(
         modifier = modifier,
         onClick = onClick
@@ -51,9 +59,11 @@ fun <T> DashboardValueBlock(
                 Spacer(modifier = Modifier.padding(vertical = Dimens.PaddingSmall))
                 Text(
                     buildAnnotatedString {
-                        append(value.toString())
-                        withStyle(style = MaterialTheme.typography.headlineSmall.toSpanStyle()) {
-                            append(measurementUnit)
+                        append(displayValue)
+                        if (displayValue != "-") {
+                            withStyle(style = MaterialTheme.typography.headlineSmall.toSpanStyle()) {
+                                append(measurementUnit)
+                            }
                         }
                     },
                     style = MaterialTheme.typography.displaySmall,

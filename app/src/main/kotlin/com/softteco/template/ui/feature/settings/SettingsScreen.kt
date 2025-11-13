@@ -12,8 +12,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.sharp.ArrowForwardIos
-import androidx.compose.material3.Divider
+import androidx.compose.material.icons.automirrored.sharp.ArrowForwardIos
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -105,23 +105,23 @@ private fun ScreenContent(
                 AppListItem(
                     onClick = { isSheetOpen = true },
                     title = stringResource(id = R.string.theme),
-                    imageIcon = Icons.Sharp.ArrowForwardIos,
+                    imageIcon = Icons.AutoMirrored.Sharp.ArrowForwardIos,
                     iconDescription = stringResource(id = R.string.theme),
                     modifier = Modifier.fillMaxWidth()
                 )
-                Divider()
+                HorizontalDivider()
                 AppListItem(
                     onClick = {
                         val intent = CustomTabsIntent.Builder().build()
                         intent.launchUrl(context, Uri.parse(ABOUT_URL))
                     },
                     title = stringResource(id = R.string.about),
-                    imageIcon = Icons.Sharp.ArrowForwardIos,
+                    imageIcon = Icons.AutoMirrored.Sharp.ArrowForwardIos,
                     iconDescription = stringResource(id = R.string.about),
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                Divider()
+                HorizontalDivider()
                 AppListItem(
                     onClick = {
                         context.sendMail(
@@ -130,31 +130,31 @@ private fun ScreenContent(
                         )
                     },
                     title = stringResource(id = R.string.contact_us),
-                    imageIcon = Icons.Sharp.ArrowForwardIos,
+                    imageIcon = Icons.AutoMirrored.Sharp.ArrowForwardIos,
                     iconDescription = stringResource(id = R.string.contact_us),
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                Divider()
+                HorizontalDivider()
                 AppListItem(
                     onClick = {
                         val intent = CustomTabsIntent.Builder().build()
                         intent.launchUrl(context, Uri.parse(TERMS_OF_SERVICES_URL))
                     },
                     title = stringResource(id = R.string.terms_of_services),
-                    imageIcon = Icons.Sharp.ArrowForwardIos,
+                    imageIcon = Icons.AutoMirrored.Sharp.ArrowForwardIos,
                     iconDescription = stringResource(id = R.string.terms_of_services),
                     modifier = Modifier.fillMaxWidth()
                 )
-                Divider()
+                HorizontalDivider()
                 AppListItem(
                     onClick = onLicensesClicked,
                     title = stringResource(id = R.string.open_source_licenses),
-                    imageIcon = Icons.Sharp.ArrowForwardIos,
+                    imageIcon = Icons.AutoMirrored.Sharp.ArrowForwardIos,
                     iconDescription = stringResource(id = R.string.open_source_licenses),
                     modifier = Modifier.fillMaxWidth()
                 )
-                Divider()
+                HorizontalDivider()
             }
 
             AppLinkText(

@@ -86,7 +86,7 @@ fun ZigBeeDevicesList(
                 if (it.device.macAddress == device.friendlyName) {
                     ZigBeeDeviceCard(
                         zigBeeDevice = device,
-                        connectionStatus = it.isConnected,
+                        deviceConnectionStatus = it,
                         onItemClicked = onItemClicked
                     )
                 }
@@ -99,7 +99,7 @@ fun ZigBeeDevicesList(
 @Composable
 fun ZigBeeDeviceCard(
     zigBeeDevice: ZigbeeDevice,
-    connectionStatus: Boolean?,
+    deviceConnectionStatus: DeviceConnectionStatus,
     onItemClicked: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -135,15 +135,14 @@ fun ZigBeeDeviceCard(
             }
             PrimaryButton(
                 buttonText = stringResource(
-                    id = if (connectionStatus == true) {
+                    id = if (deviceConnectionStatus.connectionState == com.softteco.template.utils.protocol.ConnectionState.CONNECTED) {
                         R.string.disconnect
                     } else {
                         R.string.connect
                     }
                 ),
-                loading = false,
+                loading = deviceConnectionStatus.connectionState == com.softteco.template.utils.protocol.ConnectionState.CONNECTING,
                 modifier = Modifier.weight(1F),
-                enabled = true,
                 onClick = { onItemClicked(zigBeeDevice.friendlyName) },
             )
         }

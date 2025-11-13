@@ -1,16 +1,25 @@
 package com.softteco.template.data.zigbee
 
-import com.softteco.template.MainActivity
+import com.softteco.template.data.device.protocol.common.DeviceOperationHandler
 import com.softteco.template.utils.ZigbeeDevice
 import com.softteco.template.utils.protocol.DeviceConnectionStatus
 import kotlinx.coroutines.flow.StateFlow
 
 interface ZigbeeHelper {
     /**
-     * Passing the helper class of an Activity instance for the necessary actions when
-     * creating an Activity.
+     * Initialize the helper with necessary handlers.
+     * This separates concerns and removes direct Activity dependency.
+     * 
+     * @param deviceOperationHandler Handler for device-specific operations
      */
-    fun init(activity: MainActivity)
+    fun init(
+        deviceOperationHandler: DeviceOperationHandler
+    )
+
+    /**
+     * Clean up resources and clear the helper when the activity is destroyed.
+     */
+    fun clearResources()
 
     /**
      * Connect to the MQTT server and subscribe to the topic.
@@ -18,39 +27,44 @@ interface ZigbeeHelper {
     fun connectToHub(topic: String)
 
     /**
-     * Provide connection state to ZigBee device.
+     * Connect to ZigBee device.
      */
     fun connect(topic: String)
 
     /**
-     * Provide disconnection state from ZigBee device.
+     * Disconnect from ZigBee device.
      */
     fun disconnect(topic: String)
 
     /**
-     * Disconnect from the MQTT server and subscribe to the topic.
+     * Connect to the ZigBee device via mac address.
      */
-    fun drop()
+    fun connectViaMacAddress(macAddress: String)
 
     /**
-     * Connecting to the ZigBee device via mac address.
+     * Set callback to receive scan results for discoverable ZigBee devices.
      */
-    fun provideConnectionToDeviceViaMacAddress(macAddress: String)
+    fun onScanResult(callback: (device: ZigbeeDevice) -> Unit)
 
     /**
-     * Callback to receive scan results for discoverable ZigBee devices.
+     * Set callback to receive data from the MQTT server.
      */
-    fun onScanCallback(onScanResult: (device: ZigbeeDevice) -> Unit)
+    fun onDeviceDataReceived(callback: () -> Unit)
 
     /**
-     * Callback to receive data from the MQTT server.
+     * Set callback when device is connected.
      */
-    fun onDeviceResultCallback(onDeviceResult: () -> Unit)
+    fun onDeviceConnected(callback: () -> Unit)
 
     /**
-     * Get observable connection statuses of known ZigBee devices.
+     * Set callback when device is disconnected.
      */
-    fun getObservableDeviceConnectionStatusList(): StateFlow<Map<String, DeviceConnectionStatus>>
+    fun onDeviceDisconnected(callback: () -> Unit)
+
+    /**
+     * Observe connection statuses of known ZigBee devices.
+     */
+    fun observeDeviceConnectionStatus(): StateFlow<Map<String, DeviceConnectionStatus>>
 
     /**
      * Checking the device connection status.

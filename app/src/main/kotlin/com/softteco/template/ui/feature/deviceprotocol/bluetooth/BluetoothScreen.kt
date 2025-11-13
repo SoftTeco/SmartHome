@@ -56,17 +56,17 @@ fun BluetoothScreen(
         state = state,
         onItemClicked = { bluetoothDevice ->
             CoroutineScope(Dispatchers.IO).launch {
-                viewModel.provideConnectionToDevice(bluetoothDevice)
+                viewModel.connectToDevice(bluetoothDevice)
             }
         },
         onBackClicked,
         modifier = modifier
     )
-    OnLifecycleEvent { owner, event ->
+    OnLifecycleEvent { _, event ->
         when (event) {
             Lifecycle.Event.ON_RESUME -> {
                 viewModel.registerReceiver()
-                viewModel.startScanIfHasPermissions()
+                viewModel.startScan()
             }
 
             Lifecycle.Event.ON_PAUSE -> {
@@ -113,7 +113,7 @@ fun BluetoothDevicesList(
                 if (it.device.macAddress == device.address) {
                     BluetoothDeviceCard(
                         bluetoothDevice = device,
-                        connectionStatus = it.isConnected,
+                        deviceConnectionStatus = it,
                         onItemClicked = onItemClicked
                     )
                 }
@@ -126,7 +126,7 @@ fun BluetoothDevicesList(
 @Composable
 fun BluetoothDeviceCard(
     bluetoothDevice: BluetoothDevice,
-    connectionStatus: Boolean?,
+    deviceConnectionStatus: DeviceConnectionStatus,
     onItemClicked: (BluetoothDevice) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -162,15 +162,14 @@ fun BluetoothDeviceCard(
             }
             PrimaryButton(
                 buttonText = stringResource(
-                    id = if (connectionStatus == true) {
+                    id = if (deviceConnectionStatus.connectionState == com.softteco.template.utils.protocol.ConnectionState.CONNECTED) {
                         R.string.disconnect
                     } else {
                         R.string.connect
                     }
                 ),
-                loading = false,
+                loading = deviceConnectionStatus.connectionState == com.softteco.template.utils.protocol.ConnectionState.CONNECTING,
                 modifier = Modifier.weight(1F),
-                enabled = true,
                 onClick = { onItemClicked(bluetoothDevice) },
             )
         }

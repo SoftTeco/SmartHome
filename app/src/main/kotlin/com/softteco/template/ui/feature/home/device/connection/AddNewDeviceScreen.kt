@@ -17,8 +17,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.ArrowBack
-import androidx.compose.material.icons.outlined.ArrowForwardIos
+import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.automirrored.outlined.ArrowForwardIos
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -68,7 +68,7 @@ private fun ScreenContent(
             title = { Text(stringResource(R.string.add_new_device_title)) },
             navigationIcon = {
                 IconButton(onClick = onBackClicked) {
-                    Icon(Icons.Outlined.ArrowBack, stringResource(R.string.back_description))
+                    Icon(Icons.AutoMirrored.Outlined.ArrowBack, stringResource(R.string.back_description))
                 }
             },
             modifier = Modifier.statusBarsPadding()
@@ -150,7 +150,7 @@ private fun Mode(
             }
             Spacer(Modifier.width(PaddingDefault))
             Icon(
-                Icons.Outlined.ArrowForwardIos,
+                Icons.AutoMirrored.Outlined.ArrowForwardIos,
                 null,
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
             )

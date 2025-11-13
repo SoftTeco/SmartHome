@@ -100,13 +100,13 @@ fun parseZigbeeDevices(json: String): List<ZigbeeDevice> {
             type = ZigbeeDeviceType.valueOf(jsonObject.getString("type")),
             disabled = jsonObject.getBoolean("disabled"),
             endpoints = jsonObject.optJSONObject("endpoints")?.let { parseEndpoints(it) },
-            manufacturer = jsonObject.optString("manufacturer", null),
-            modelId = jsonObject.optString("model_id", null),
+            manufacturer = jsonObject.optString("manufacturer").takeIf { it.isNotEmpty() },
+            modelId = jsonObject.optString("model_id").takeIf { it.isNotEmpty() },
             definition = jsonObject.optJSONObject("definition")?.let { parseDefinition(it) },
             interviewCompleted = jsonObject.getBoolean("interview_completed"),
             interviewing = jsonObject.getBoolean("interviewing"),
-            softwareBuildId = jsonObject.optString("software_build_id", null),
-            powerSource = jsonObject.optString("power_source", null),
+            softwareBuildId = jsonObject.optString("software_build_id").takeIf { it.isNotEmpty() },
+            powerSource = jsonObject.optString("power_source").takeIf { it.isNotEmpty() },
             supported = jsonObject.getBoolean("supported")
         )
         devices.add(device)
@@ -180,18 +180,18 @@ fun parseExposes(jsonArray: JSONArray): List<ExposedFeature> {
         val jsonObject = jsonArray.getJSONObject(index)
         ExposedFeature(
             access = jsonObject.getInt("access"),
-            category = jsonObject.optString("category", null),
+            category = jsonObject.optString("category").takeIf { it.isNotEmpty() },
             description = jsonObject.getString("description"),
             label = jsonObject.getString("label"),
             name = jsonObject.getString("name"),
             property = jsonObject.getString("property"),
             type = jsonObject.getString("type"),
-            unit = jsonObject.optString("unit", null),
+            unit = jsonObject.optString("unit").takeIf { it.isNotEmpty() },
             valueMax = jsonObject.optInt("value_max"),
             valueMin = jsonObject.optInt("value_min"),
             valueStep = jsonObject.optDouble("value_step", 0.0),
-            valueOff = jsonObject.optString("value_off", null),
-            valueOn = jsonObject.optString("value_on", null),
+            valueOff = jsonObject.optString("value_off").takeIf { it.isNotEmpty() },
+            valueOn = jsonObject.optString("value_on").takeIf { it.isNotEmpty() },
             values = jsonObject.optJSONArray("values")?.toList()
         )
     }

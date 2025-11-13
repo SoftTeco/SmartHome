@@ -7,7 +7,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.ArrowBack
+import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -61,7 +61,7 @@ private fun ScreenContent(
             title = { Text(stringResource(R.string.settings)) },
             navigationIcon = {
                 IconButton(onClick = onBackClicked) {
-                    Icon(Icons.Outlined.ArrowBack, stringResource(R.string.back_description))
+                    Icon(Icons.AutoMirrored.Outlined.ArrowBack, stringResource(R.string.back_description))
                 }
             },
             modifier = Modifier.statusBarsPadding()

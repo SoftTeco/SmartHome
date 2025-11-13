@@ -2,7 +2,7 @@ package com.softteco.template.ui.components
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Divider
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ModalBottomSheet
@@ -30,9 +30,9 @@ fun CustomBottomSheet(
             modifier = modifier,
         ) {
             ThemeListItem(ThemeMode.SystemDefault, onThemeSelected)
-            Divider(Modifier.padding(horizontal = PaddingDefault))
+            HorizontalDivider(Modifier.padding(horizontal = PaddingDefault))
             ThemeListItem(ThemeMode.Dark, onThemeSelected)
-            Divider(Modifier.padding(horizontal = PaddingDefault))
+            HorizontalDivider(Modifier.padding(horizontal = PaddingDefault))
             ThemeListItem(ThemeMode.Light, onThemeSelected)
         }
     }

@@ -4,382 +4,240 @@ import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGatt
-import android.bluetooth.BluetoothGattCallback
-import android.bluetooth.BluetoothGattCharacteristic
-import android.bluetooth.BluetoothGattDescriptor
-import android.bluetooth.BluetoothProfile
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import android.provider.Settings
-import androidx.activity.result.ActivityResultLauncher
-import com.softteco.template.BuildConfig
-import com.softteco.template.Constants.READ_BLUETOOTH_CHARACTERISTIC_DELAY
-import com.softteco.template.data.base.error.Result
 import com.softteco.template.data.bluetooth.BluetoothByteParser
 import com.softteco.template.data.bluetooth.BluetoothHelper
 import com.softteco.template.data.bluetooth.BluetoothState
-import com.softteco.template.data.device.Device
-import com.softteco.template.data.device.ProtocolType
-import com.softteco.template.data.device.ThermometerData
 import com.softteco.template.data.device.ThermometerRepository
-import com.softteco.template.data.device.ThermometerValues
+import com.softteco.template.data.device.protocol.common.BluetoothStateChecker
 import com.softteco.template.data.device.protocol.common.DeviceOperationHandler
+import com.softteco.template.data.device.protocol.common.IntentLauncher
+import com.softteco.template.data.device.protocol.common.PermissionHandler
+import com.softteco.template.data.device.protocol.common.ReceiverManager
 import com.softteco.template.utils.protocol.DeviceConnectionService
 import com.softteco.template.utils.protocol.DeviceConnectionStatus
-import com.softteco.template.utils.protocol.PermissionType
-import com.softteco.template.utils.protocol.getBluetoothAdapter
 import com.softteco.template.utils.protocol.isServiceRunning
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withContext
-import no.nordicsemi.android.support.v18.scanner.BluetoothLeScannerCompat
-import no.nordicsemi.android.support.v18.scanner.ScanCallback
 import no.nordicsemi.android.support.v18.scanner.ScanResult
 import timber.log.Timber
-import java.time.LocalDateTime
-import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 
+/**
+ * Main coordinator for Bluetooth operations.
+ * Delegates responsibilities to specialized managers.
+ */
 @SuppressLint("MissingPermission")
 @Singleton
 internal class BluetoothHelperImpl @Inject constructor(
-    private val bluetoothByteParser: BluetoothByteParser,
-    private val thermometerRepository: ThermometerRepository
+    @ApplicationContext private val context: Context,
+    bluetoothByteParser: BluetoothByteParser,
+    thermometerRepository: ThermometerRepository
 ) : BluetoothHelper, BluetoothState {
 
-    private var deviceOperationHandler: DeviceOperationHandler? = null
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+
+    private lateinit var deviceOperationHandler: DeviceOperationHandler
+    private lateinit var receiverManager: ReceiverManager
     private lateinit var bluetoothReceiver: BroadcastReceiver
-    private var resultLocationEnableLauncher: ActivityResultLauncher<Intent>? = null
-    private var savedBluetoothDevices = mutableListOf<Device>()
-    override var onConnect: (() -> Unit)? = null
-    override var onDisconnect: (() -> Unit)? = null
-    override var onScanResult: ((scanResult: ScanResult) -> Unit)? = null
-    override var onDeviceResult: (() -> Unit)? = null
-    override var onBluetoothModuleChangeState: ((ifTurnOn: Boolean) -> Unit)? = null
-    private var readCharacteristicTimestamp = 0L
 
-    private val _deviceConnectionStatusList =
-        MutableStateFlow<Map<String, DeviceConnectionStatus>>(emptyMap())
-    private val deviceConnectionStatusList: StateFlow<Map<String, DeviceConnectionStatus>> =
-        _deviceConnectionStatusList
+    private lateinit var scanManager: BluetoothScanManager
+    private val connectionManager: BluetoothConnectionManager
+    private val deviceRepository: BluetoothDeviceRepository
+    private val gattHandler: BluetoothGattCallbackHandler
 
-    private var connectedDevicesList = hashMapOf<String, BluetoothGatt>()
+    override var deviceConnectedCallback: (() -> Unit)? = null
+    override var deviceDisconnectedCallback: (() -> Unit)? = null
+    override var scanResultCallback: ((scanResult: ScanResult) -> Unit)? = null
+    override var deviceDataReceivedCallback: (() -> Unit)? = null
+    override var bluetoothStateChangedCallback: ((isEnabled: Boolean) -> Unit)? = null
 
-    private val scanCallback: ScanCallback = object : ScanCallback() {
-        override fun onScanResult(
-            callbackType: Int,
-            scanResult: ScanResult
-        ) {
-            super.onScanResult(callbackType, scanResult)
-            scanResult.device.name?.let {
-                _deviceConnectionStatusList.update { currentMap ->
-                    currentMap.toMutableMap().apply {
-                        this[scanResult.device.address] = DeviceConnectionStatus(
-                            Device.Basic(
-                                type = Device.Type.TemperatureAndHumidity,
-                                family = Device.Family.Sensor,
-                                model = deviceOperationHandler?.getDeviceModel(it)
-                                    ?: Device.Model.Unknown,
-                                id = UUID.randomUUID(),
-                                defaultName = it,
-                                name = "Temperature and Humidity Monitor",
-                                macAddress = scanResult.device.address,
-                                img = deviceOperationHandler?.getDeviceImage(it),
-                                location = "",
-                                protocolType = ProtocolType.BLUETOOTH
-                            ),
-                            false
-                        )
-                    }
-                }
-                onScanResult?.invoke(scanResult)
-            }
-        }
+    init {
+        deviceRepository = BluetoothDeviceRepository(thermometerRepository, scope)
+        
+        gattHandler = BluetoothGattCallbackHandler(
+            bluetoothByteParser = bluetoothByteParser,
+            thermometerRepository = thermometerRepository,
+            deviceRepository = deviceRepository,
+            scope = scope,
+            onDeviceConnected = ::handleDeviceConnected,
+            onDeviceDisconnected = ::handleDeviceDisconnected,
+            onDeviceDataReceived = { deviceDataReceivedCallback?.invoke() }
+        )
+        
+        connectionManager = BluetoothConnectionManager(
+            context = context,
+            scope = scope,
+            gattCallback = gattHandler
+        )
     }
 
-    override fun init(deviceOperationHandler: DeviceOperationHandler) {
+    override fun init(
+        deviceOperationHandler: DeviceOperationHandler,
+        permissionHandler: PermissionHandler,
+        intentLauncher: IntentLauncher,
+        receiverManager: ReceiverManager,
+        stateChecker: BluetoothStateChecker
+    ) {
         this.deviceOperationHandler = deviceOperationHandler
-        bluetoothReceiver = object : BroadcastReceiver() {
-            override fun onReceive(context: Context, intent: Intent) {
-                when (
-                    intent.getIntExtra(
-                        BluetoothAdapter.EXTRA_STATE,
-                        BluetoothAdapter.STATE_OFF
-                    )
-                ) {
-                    BluetoothAdapter.STATE_ON -> {
-                        startScan()
-                        onBluetoothModuleChangeState?.invoke(true)
-                    }
-
-                    BluetoothAdapter.STATE_OFF -> {
-                        stopService()
-                        stopScan()
-                        onBluetoothModuleChangeState?.invoke(false)
-                    }
-                }
-            }
-        }
-        runBlocking {
-            withContext(Dispatchers.IO) {
-                when (val result = thermometerRepository.getDevices()) {
-                    is Result.Success -> {
-                        result.data.filter { it.protocolType == ProtocolType.BLUETOOTH }.let {
-                            savedBluetoothDevices.addAll(it)
-                            it.forEach {
-                                _deviceConnectionStatusList.update { currentMap ->
-                                    currentMap.toMutableMap().apply {
-                                        this[it.macAddress] = DeviceConnectionStatus(it, false)
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    is Result.Error -> {}
-                }
-            }
-        }
+        this.receiverManager = receiverManager
+        
+        scanManager = BluetoothScanManager(
+            deviceOperationHandler = deviceOperationHandler,
+            permissionHandler = permissionHandler,
+            intentLauncher = intentLauncher,
+            stateChecker = stateChecker,
+            onDeviceDiscovered = deviceRepository::updateDeviceStatus,
+            onScanResultCallback = { scanResultCallback?.invoke(it) }
+        )
+        
+        initializeBluetoothReceiver()
+        deviceRepository.loadSavedDevices()
     }
 
-    override fun shutdown() {
-        stopService()
-        unregisterReceiver()
+    override fun clearResources() {
+        scope.cancel()
+        stopConnectionService()
+        unregisterBluetoothReceiver()
     }
 
-    override fun provideConnectionToTheDevice(bluetoothDevice: BluetoothDevice) {
-        if (checkConnectedDevice(bluetoothDevice.address)) {
-            disconnect(bluetoothDevice.address)
-        } else {
-            bluetoothDevice.connectGatt(
-                deviceOperationHandler?.getContext(),
-                false,
-                mGattCallback,
-                BluetoothDevice.TRANSPORT_LE
-            )
+    override fun connectDevice(bluetoothDevice: BluetoothDevice) {
+        when {
+            checkConnectedDevice(bluetoothDevice.address) -> disconnect(bluetoothDevice.address)
+            else -> {
+                setDeviceConnecting(bluetoothDevice.address)
+                connectionManager.connectDevice(bluetoothDevice)
+            }
         }
     }
 
     override fun connect(macAddress: String) {
-        deviceOperationHandler?.getContext()?.getBluetoothAdapter()?.getRemoteDevice(macAddress)
-            ?.let {
-                CoroutineScope(Dispatchers.IO).launch {
-                    provideConnectionToTheDevice(it)
-                }
-            }
+        connectionManager.connect(macAddress) {
+            setDeviceConnecting(macAddress)
+        }
     }
 
-    override fun registerReceiver() {
-        deviceOperationHandler?.registerReceiver(
+    override fun disconnect(macAddress: String) {
+        connectionManager.disconnect(macAddress)
+        gattHandler.resetTimestamp()
+    }
+
+    override fun registerBluetoothReceiver() {
+        receiverManager.registerReceiver(
             bluetoothReceiver,
             IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED)
         )
     }
 
-    @Suppress("TooGenericExceptionCaught")
-    override fun unregisterReceiver() {
-        try {
-            deviceOperationHandler?.unregisterReceiver(bluetoothReceiver)
-        } catch (e: Exception) {
-            Timber.e("Error unregister receiver", e)
+    override fun unregisterBluetoothReceiver() {
+        runCatching {
+            receiverManager.unregisterReceiver(bluetoothReceiver)
+        }.onFailure { e ->
+            Timber.e(e, "Failed to unregister receiver")
         }
     }
 
-    override fun checkConnectedDevice(macAddress: String): Boolean {
-        val statusMap = runBlocking { deviceConnectionStatusList.first() }
-        return statusMap[macAddress]?.isConnected ?: false
-    }
-
-    private fun stopScan() {
-        BluetoothLeScannerCompat.getScanner().stopScan(scanCallback)
-    }
-
-    private val mGattCallback: BluetoothGattCallback = object : BluetoothGattCallback() {
-        override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
-            if (newState == BluetoothProfile.STATE_CONNECTED) {
-                provideConnectedState(gatt)
-            }
-            if (newState == BluetoothProfile.STATE_DISCONNECTED) {
-                gatt.let {
-                    _deviceConnectionStatusList.update { currentMap ->
-                        currentMap.toMutableMap().apply {
-                            this[it.device.address]?.let { status ->
-                                val updatedStatus = status.copy(isConnected = false)
-                                this[it.device.address] = updatedStatus
-                            }
-                        }
-                    }
-                    it.close()
-                    onDisconnect?.invoke()
-                    stopService()
-                }
-            }
-        }
-
-        override fun onServicesDiscovered(gatt: BluetoothGatt?, status: Int) {
-            super.onServicesDiscovered(gatt, status)
-            if (status == BluetoothGatt.GATT_SUCCESS) {
-                gatt?.let { gatt ->
-                    gatt.getService(UUID.fromString(BuildConfig.BLUETOOTH_SERVICE_UUID_VALUE))
-                        .getCharacteristic(UUID.fromString(BuildConfig.BLUETOOTH_CHARACTERISTIC_UUID_VALUE))
-                        .let { characteristic ->
-                            setCharacteristicNotification(gatt, characteristic, true)
-                        }
-                }
-            }
-        }
-
-        fun setCharacteristicNotification(
-            bluetoothGatt: BluetoothGatt,
-            characteristic: BluetoothGattCharacteristic,
-            enable: Boolean
-        ): Boolean {
-            bluetoothGatt.setCharacteristicNotification(characteristic, enable)
-            val descriptor =
-                characteristic.getDescriptor(UUID.fromString(BuildConfig.BLUETOOTH_DESCRIPTOR_UUID_VALUE))
-            descriptor.value =
-                if (enable) {
-                    BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
-                } else {
-                    byteArrayOf(
-                        0x00,
-                        0x00
-                    )
-                }
-            return bluetoothGatt.writeDescriptor(descriptor)
-        }
-
-        @Deprecated("Deprecated in Java")
-        override fun onCharacteristicChanged(
-            gatt: BluetoothGatt,
-            characteristic: BluetoothGattCharacteristic
-        ) {
-            characteristic.value.let { characteristic ->
-                if (System.currentTimeMillis() - readCharacteristicTimestamp >= READ_BLUETOOTH_CHARACTERISTIC_DELAY) {
-                    readCharacteristicTimestamp = System.currentTimeMillis()
-                    _deviceConnectionStatusList.value[gatt.device.address]?.device?.let { device ->
-                        val bluetoothDeviceData = bluetoothByteParser.parseBytes(
-                            characteristic,
-                            device.model
-                        ) as ThermometerValues.DataLYWSD03MMC
-                        onDeviceResult?.invoke()
-                        runBlocking {
-                            withContext(Dispatchers.IO) {
-                                thermometerRepository.saveCurrentMeasurement(
-                                    ThermometerValues.DataLYWSD03MMC(
-                                        bluetoothDeviceData.temperature,
-                                        bluetoothDeviceData.humidity,
-                                        bluetoothDeviceData.battery,
-                                        device.macAddress,
-                                        LocalDateTime.now(),
-                                    )
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    override fun disconnect(macAddress: String) {
-        val bluetoothGatt = connectedDevicesList[macAddress]
-        bluetoothGatt?.disconnect()
-        readCharacteristicTimestamp = 0L
-    }
+    override fun checkConnectedDevice(macAddress: String): Boolean =
+        deviceRepository.isConnected(macAddress)
 
     override fun startScan() {
-        deviceOperationHandler?.let {
-            if (it.checkBluetoothSupport() && it.hasPermissions()) {
-                when (it.checkEnableDeviceModules()) {
-                    PermissionType.LOCATION_TURNED_OFF -> {
-                        it.startIntent(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS))
-                    }
+        scanManager.startScan()
+    }
 
-                    PermissionType.BLUETOOTH_TURNED_OFF -> {
-                        it.startIntent(Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE))
-                    }
+    override fun onScanResult(callback: (scanResult: ScanResult) -> Unit) {
+        this.scanResultCallback = callback
+    }
 
-                    PermissionType.BLUETOOTH_AND_LOCATION_TURNED_ON -> {
-                        stopScan()
-                        BluetoothLeScannerCompat.getScanner().startScan(scanCallback)
-                    }
-                }
+    override fun onDeviceConnected(callback: () -> Unit) {
+        this.deviceConnectedCallback = callback
+    }
+
+    override fun onDeviceDisconnected(callback: () -> Unit) {
+        this.deviceDisconnectedCallback = callback
+    }
+
+    override fun onDeviceDataReceived(callback: () -> Unit) {
+        this.deviceDataReceivedCallback = callback
+    }
+
+    override fun onBluetoothStateChanged(callback: (isEnabled: Boolean) -> Unit) {
+        this.bluetoothStateChangedCallback = callback
+    }
+
+    override fun observeDeviceConnectionStatus(): StateFlow<Map<String, DeviceConnectionStatus>> =
+        deviceRepository.deviceConnectionStatusList
+
+    // Private functions
+
+    private fun initializeBluetoothReceiver() {
+        bluetoothReceiver = object : BroadcastReceiver() {
+            override fun onReceive(context: Context, intent: Intent) {
+                val state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.STATE_OFF)
+                handleBluetoothStateChange(state)
             }
         }
     }
 
-    override fun onScanCallback(onScanResult: (scanResult: ScanResult) -> Unit) {
-        this.onScanResult = onScanResult
-    }
-
-    override fun onConnectCallback(onConnect: () -> Unit) {
-        this.onConnect = onConnect
-    }
-
-    override fun onDisconnectCallback(onDisconnect: () -> Unit) {
-        this.onDisconnect = onDisconnect
-    }
-
-    override fun onDeviceResultCallback(onDeviceResult: () -> Unit) {
-        this.onDeviceResult = onDeviceResult
-    }
-
-    override fun onBluetoothModuleChangeStateCallback(onBluetoothModuleChangeState: (ifTurnOn: Boolean) -> Unit) {
-        this.onBluetoothModuleChangeState = onBluetoothModuleChangeState
-    }
-
-    override fun getObservableDeviceConnectionStatusList() = deviceConnectionStatusList
-
-    private fun provideConnectedState(bluetoothGatt: BluetoothGatt) {
-        bluetoothGatt.let {
-            connectedDevicesList[it.device.address] = it
-            _deviceConnectionStatusList.update { currentMap ->
-                currentMap.toMutableMap().apply {
-                    this[it.device.address]?.let { status ->
-                        val updatedStatus = status.copy(isConnected = true)
-                        this[it.device.address] = updatedStatus
-                        if (savedBluetoothDevices.none { o -> o.macAddress == it.device.address }) {
-                            runBlocking {
-                                withContext(Dispatchers.IO) {
-                                    thermometerRepository.saveDevice(status.device)
-                                    thermometerRepository.saveThermometerData(
-                                        ThermometerData(
-                                            deviceId = status.device.id,
-                                            deviceName = status.device.name,
-                                            macAddress = status.device.macAddress
-                                        )
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
+    private fun handleBluetoothStateChange(state: Int) {
+        when (state) {
+            BluetoothAdapter.STATE_ON -> {
+                startScan()
+                bluetoothStateChangedCallback?.invoke(true)
             }
-            it.discoverServices()
-            onConnect?.invoke()
-            if (deviceOperationHandler?.getContext()?.isServiceRunning(DeviceConnectionService::class.java) == false) {
-                deviceOperationHandler?.startConnectionService(DeviceConnectionService::class.java)
+            BluetoothAdapter.STATE_OFF -> {
+                stopConnectionService()
+                scanManager.stopScan()
+                bluetoothStateChangedCallback?.invoke(false)
             }
         }
     }
 
-    private fun stopService() {
-//        if (!checkRemainingConnectionForService(
-//                getObservableDeviceConnectionStatusList(),
-//                activity?.zigbeeHelper?.getObservableDeviceConnectionStatusList()
-//            )
-//        ) {
-            deviceOperationHandler?.stopConnectionService(DeviceConnectionService::class.java)
-//        }
+    private fun setDeviceConnecting(macAddress: String) {
+        val currentStatus = deviceRepository.getDeviceStatus(macAddress) ?: return
+        val updatedStatus = DeviceConnectionStatus.connecting(currentStatus.device)
+        deviceRepository.updateDeviceStatus(macAddress, updatedStatus)
+    }
+
+    private fun handleDeviceConnected(gatt: BluetoothGatt) {
+        connectionManager.addConnectedDevice(gatt.device.address, gatt)
+        
+        val currentStatus = deviceRepository.getDeviceStatus(gatt.device.address) ?: return
+        val updatedStatus = DeviceConnectionStatus.connected(currentStatus.device)
+        
+        deviceRepository.updateDeviceStatus(gatt.device.address, updatedStatus)
+        deviceRepository.saveNewDevice(currentStatus.device)
+        
+        gatt.discoverServices()
+        deviceConnectedCallback?.invoke()
+        startConnectionServiceIfNeeded()
+    }
+
+    private fun handleDeviceDisconnected(gatt: BluetoothGatt) {
+        val currentStatus = deviceRepository.getDeviceStatus(gatt.device.address) ?: return
+        val updatedStatus = DeviceConnectionStatus.disconnected(currentStatus.device)
+        
+        deviceRepository.updateDeviceStatus(gatt.device.address, updatedStatus)
+        
+        connectionManager.closeConnection(gatt)
+        deviceDisconnectedCallback?.invoke()
+        stopConnectionService()
+    }
+
+    private fun startConnectionServiceIfNeeded() {
+        if (!isServiceRunning(DeviceConnectionService::class.java)) {
+            deviceOperationHandler.startConnectionService(DeviceConnectionService::class.java)
+        }
+    }
+
+    private fun stopConnectionService() {
+        deviceOperationHandler.stopConnectionService(DeviceConnectionService::class.java)
     }
 }

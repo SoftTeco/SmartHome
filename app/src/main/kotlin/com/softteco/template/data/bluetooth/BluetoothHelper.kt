@@ -1,49 +1,63 @@
 package com.softteco.template.data.bluetooth
 
 import android.bluetooth.BluetoothDevice
+import com.softteco.template.data.device.protocol.common.BluetoothStateChecker
 import com.softteco.template.data.device.protocol.common.DeviceOperationHandler
+import com.softteco.template.data.device.protocol.common.IntentLauncher
+import com.softteco.template.data.device.protocol.common.PermissionHandler
+import com.softteco.template.data.device.protocol.common.ReceiverManager
 import com.softteco.template.utils.protocol.DeviceConnectionStatus
 import kotlinx.coroutines.flow.StateFlow
 import no.nordicsemi.android.support.v18.scanner.ScanResult
 
 interface BluetoothHelper {
     /**
-     * Passing the helper class of an Activity instance for the necessary actions when
-     * creating an Activity.
+     * Initialize the helper with necessary handlers.
+     * This separates concerns and removes direct Activity dependency.
+     * 
+     * @param deviceOperationHandler Handler for device-specific operations
+     * @param permissionHandler Handler for checking and requesting permissions
+     * @param intentLauncher Handler for launching system intents
+     * @param receiverManager Handler for managing broadcast receivers
+     * @param stateChecker Handler for checking Bluetooth and location states
      */
-    fun init(deviceOperationHandler: DeviceOperationHandler)
+    fun init(
+        deviceOperationHandler: DeviceOperationHandler,
+        permissionHandler: PermissionHandler,
+        intentLauncher: IntentLauncher,
+        receiverManager: ReceiverManager,
+        stateChecker: BluetoothStateChecker
+    )
 
     /**
-     * Removing an Activity instance from the helper class when the activity is destroyed.
+     * Clean up resources and clear the helper when the activity is destroyed.
      */
-    fun shutdown()
+    fun clearResources()
 
     /**
-     * Connecting to the Bluetooth device.
+     * Connect to the Bluetooth device.
      */
-    fun provideConnectionToTheDevice(bluetoothDevice: BluetoothDevice)
+    fun connectDevice(bluetoothDevice: BluetoothDevice)
 
     /**
-     * Connecting to the Bluetooth device via mac address.
+     * Connect to the Bluetooth device via mac address.
      */
     fun connect(macAddress: String)
 
     /**
-     * Disconnecting from the Bluetooth device.
+     * Disconnect from the Bluetooth device.
      */
     fun disconnect(macAddress: String)
 
     /**
-     * Register the receiver to track the events of turning the Bluetooth adapter on and off in
-     * relation to displaying the Bluetooth fragment.
+     * Register the Bluetooth receiver to track adapter state changes.
      */
-    fun registerReceiver()
+    fun registerBluetoothReceiver()
 
     /**
-     * Unregister the receiver to track the events of turning the Bluetooth adapter on and off in
-     * relation to displaying the Bluetooth fragment.
+     * Unregister the Bluetooth receiver.
      */
-    fun unregisterReceiver()
+    fun unregisterBluetoothReceiver()
 
     /**
      * Checking the device connection status.
@@ -57,32 +71,32 @@ interface BluetoothHelper {
     fun startScan()
 
     /**
-     * Callback to receive scan results for discoverable Bluetooth devices.
+     * Set callback to receive scan results for discoverable Bluetooth devices.
      */
-    fun onScanCallback(onScanResult: (scanResult: ScanResult) -> Unit)
+    fun onScanResult(callback: (scanResult: ScanResult) -> Unit)
 
     /**
-     * Callback to connect to the Bluetooth device.
+     * Set callback when device is connected.
      */
-    fun onConnectCallback(onConnect: () -> Unit)
+    fun onDeviceConnected(callback: () -> Unit)
 
     /**
-     * Callback to disconnect from the Bluetooth device.
+     * Set callback when device is disconnected.
      */
-    fun onDisconnectCallback(onDisconnect: () -> Unit)
+    fun onDeviceDisconnected(callback: () -> Unit)
 
     /**
-     * Callback to receive data from the Bluetooth device.
+     * Set callback to receive data from the Bluetooth device.
      */
-    fun onDeviceResultCallback(onDeviceResult: () -> Unit)
+    fun onDeviceDataReceived(callback: () -> Unit)
 
     /**
-     * Callback to catch action with current state of Bluetooth module.
+     * Set callback for Bluetooth adapter state changes.
      */
-    fun onBluetoothModuleChangeStateCallback(onBluetoothModuleChangeState: (ifTurnOn: Boolean) -> Unit)
+    fun onBluetoothStateChanged(callback: (isEnabled: Boolean) -> Unit)
 
     /**
-     * Get observable connection statuses of known Bluetooth devices.
+     * Observe connection statuses of known Bluetooth devices.
      */
-    fun getObservableDeviceConnectionStatusList(): StateFlow<Map<String, DeviceConnectionStatus>>
+    fun observeDeviceConnectionStatus(): StateFlow<Map<String, DeviceConnectionStatus>>
 }

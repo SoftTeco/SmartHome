@@ -1,23 +1,37 @@
 package com.softteco.template.data.device.protocol.common
 
 import android.app.Service
-import android.content.BroadcastReceiver
-import android.content.Context
-import android.content.Intent
-import android.content.IntentFilter
 import com.softteco.template.data.device.Device
-import com.softteco.template.utils.protocol.PermissionType
 
+/**
+ * Interface for device-specific operations.
+ * This interface handles device information and service management,
+ * without direct dependencies on Activity.
+ */
 interface DeviceOperationHandler {
-    fun getContext(): Context
+    /**
+     * Get the device model based on the device name.
+     * @param deviceName The name of the device
+     * @return The device model
+     */
     fun getDeviceModel(deviceName: String): Device.Model
+    
+    /**
+     * Get the device image resource path based on the device name.
+     * @param deviceName The name of the device
+     * @return The image resource path
+     */
     fun getDeviceImage(deviceName: String): String
-    fun startIntent(intent: Intent)
-    fun registerReceiver(receiver: BroadcastReceiver, filter: IntentFilter)
-    fun unregisterReceiver(receiver: BroadcastReceiver)
+    
+    /**
+     * Start a connection service for maintaining device connections.
+     * @param serviceClass The service class to start
+     */
     fun startConnectionService(serviceClass: Class<out Service>)
+    
+    /**
+     * Stop a connection service.
+     * @param serviceClass The service class to stop
+     */
     fun stopConnectionService(serviceClass: Class<out Service>)
-    fun checkBluetoothSupport(): Boolean
-    fun checkEnableDeviceModules(): PermissionType
-    fun hasPermissions(): Boolean
 }

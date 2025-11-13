@@ -3,7 +3,6 @@ package com.softteco.template.utils.protocol
 import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Activity
-import android.app.ActivityManager
 import android.app.Service
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothManager
@@ -106,8 +105,12 @@ fun Context.stopConnectionService(serviceClass: Class<out Service>) {
     stopService(intent)
 }
 
-fun Context.isServiceRunning(serviceClass: Class<out Service>): Boolean {
-    val manager = getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager
-    val services = manager?.getRunningServices(Int.MAX_VALUE) ?: return false
-    return services.any { it.service.className == serviceClass.name }
+fun isServiceRunning(serviceClass: Class<out Service>): Boolean {
+    return when (serviceClass) {
+        DeviceConnectionService::class.java -> ServiceStateManager.isDeviceConnectionServiceRunning()
+        else -> {
+            timber.log.Timber.w("Service state tracking not implemented for ${serviceClass.name}")
+            false
+        }
+    }
 }

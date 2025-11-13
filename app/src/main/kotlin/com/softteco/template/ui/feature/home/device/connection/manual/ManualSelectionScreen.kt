@@ -16,7 +16,7 @@ import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.ArrowBack
+import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -83,7 +83,7 @@ private fun ScreenContent(
             title = { Text(stringResource(R.string.manual_selection_title)) },
             navigationIcon = {
                 IconButton(onClick = onBackClicked) {
-                    Icon(Icons.Outlined.ArrowBack, stringResource(R.string.back_description))
+                    Icon(Icons.AutoMirrored.Outlined.ArrowBack, stringResource(R.string.back_description))
                 }
             },
             actions = {

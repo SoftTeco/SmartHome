@@ -15,12 +15,22 @@ import com.softteco.template.MainActivity
 import com.softteco.template.R
 import timber.log.Timber
 
+/**
+ * Foreground service for maintaining device connections.
+ * Uses ServiceStateManager for proper state tracking without deprecated APIs.
+ */
 class DeviceConnectionService : Service() {
 
     override fun onBind(intent: Intent?): IBinder? = null
 
     companion object {
         const val DEVICE_CONNECTION_SERVICE_NOTIFICATION_ID = 1
+    }
+
+    override fun onCreate() {
+        super.onCreate()
+        ServiceStateManager.notifyDeviceConnectionServiceStarted()
+        Timber.d("DeviceConnectionService created")
     }
 
     @Suppress("TooGenericExceptionCaught")
@@ -59,6 +69,12 @@ class DeviceConnectionService : Service() {
         }
 
         return START_NOT_STICKY
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        ServiceStateManager.notifyDeviceConnectionServiceStopped()
+        Timber.d("DeviceConnectionService destroyed")
     }
 
     private fun createNotificationChannel() {

@@ -140,6 +140,10 @@ internal class ZigbeeHelperImpl @Inject constructor(
         return statusMap[topic]?.isConnected ?: false
     }
 
+    override fun removeDeviceFromCache(macAddress: String) {
+        deviceRepository.removeDevice(macAddress)
+    }
+
     // Private functions
 
     private fun initializeManagers() {

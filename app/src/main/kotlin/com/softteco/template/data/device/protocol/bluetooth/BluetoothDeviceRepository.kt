@@ -57,7 +57,7 @@ internal class BluetoothDeviceRepository(
 
     fun saveNewDevice(device: Device) {
         if (isDeviceSaved(device.macAddress)) return
-        
+
         scope.launch(Dispatchers.IO) {
             thermometerRepository.saveDevice(device)
             thermometerRepository.saveThermometerData(
@@ -73,4 +73,11 @@ internal class BluetoothDeviceRepository(
 
     fun isConnected(macAddress: String): Boolean =
         _deviceConnectionStatusList.value[macAddress]?.isConnected ?: false
+
+    fun removeDevice(macAddress: String) {
+        savedDevicesCache.remove(macAddress)
+        _deviceConnectionStatusList.update { currentMap ->
+            currentMap - macAddress
+        }
+    }
 }

@@ -85,4 +85,11 @@ internal class ZigbeeDeviceRepository(
             }
         }
     }
+
+    fun removeDevice(macAddress: String) {
+        savedDevicesCache.remove(macAddress)
+        _deviceConnectionStatusList.update { currentMap ->
+            currentMap - macAddress
+        }
+    }
 }

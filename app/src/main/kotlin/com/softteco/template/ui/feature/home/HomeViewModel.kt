@@ -96,14 +96,16 @@ class HomeViewModel @Inject constructor(
                         when (device.protocolType) {
                             ProtocolType.ZIGBEE -> {
                                 if (zigbeeHelper.checkConnectedDevice(device.macAddress)) {
-                                    zigbeeHelper.disconnect(ZigbeeTopic.ZIGBEE_DATA_TOPIC.value + device.name)
+                                    zigbeeHelper.disconnect(ZigbeeTopic.ZIGBEE_DATA_TOPIC.value + device.macAddress)
                                 }
+                                zigbeeHelper.removeDeviceFromCache(device.macAddress)
                             }
 
                             ProtocolType.BLUETOOTH -> {
                                 if (bluetoothHelper.checkConnectedDevice(device.macAddress)) {
                                     bluetoothHelper.disconnect(device.macAddress)
                                 }
+                                bluetoothHelper.removeDeviceFromCache(device.macAddress)
                             }
 
                             else -> {}

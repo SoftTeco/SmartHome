@@ -14,7 +14,7 @@ interface BluetoothHelper {
     /**
      * Initialize the helper with necessary handlers.
      * This separates concerns and removes direct Activity dependency.
-     * 
+     *
      * @param deviceOperationHandler Handler for device-specific operations
      * @param permissionHandler Handler for checking and requesting permissions
      * @param intentLauncher Handler for launching system intents
@@ -99,4 +99,9 @@ interface BluetoothHelper {
      * Observe connection statuses of known Bluetooth devices.
      */
     fun observeDeviceConnectionStatus(): StateFlow<Map<String, DeviceConnectionStatus>>
+
+    /**
+     * Remove device from cache after deletion.
+     */
+    fun removeDeviceFromCache(macAddress: String)
 }

@@ -31,7 +31,7 @@ fun bluetoothCharacteristicByteConversation(
 }
 
 @SuppressLint("MissingPermission")
-fun getBluetoothDeviceName(bluetoothDevice: BluetoothDevice): String = bluetoothDevice.name
+fun getBluetoothDeviceName(bluetoothDevice: BluetoothDevice): String = bluetoothDevice.name ?: ""
 
 fun getZigBeeDeviceName(zigbeeDevice: ZigbeeDevice): String = zigbeeDevice.modelId ?: ""
 

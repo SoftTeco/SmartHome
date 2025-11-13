@@ -9,7 +9,7 @@ interface ZigbeeHelper {
     /**
      * Initialize the helper with necessary handlers.
      * This separates concerns and removes direct Activity dependency.
-     * 
+     *
      * @param deviceOperationHandler Handler for device-specific operations
      */
     fun init(
@@ -70,4 +70,9 @@ interface ZigbeeHelper {
      * Checking the device connection status.
      */
     fun checkConnectedDevice(topic: String): Boolean
+
+    /**
+     * Remove device from cache after deletion.
+     */
+    fun removeDeviceFromCache(macAddress: String)
 }

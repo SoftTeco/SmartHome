@@ -17,8 +17,10 @@ import com.softteco.template.data.device.protocol.common.DeviceOperationHandler
 import com.softteco.template.data.device.protocol.common.IntentLauncher
 import com.softteco.template.data.device.protocol.common.PermissionHandler
 import com.softteco.template.data.device.protocol.common.ReceiverManager
+import com.softteco.template.data.zigbee.ZigbeeHelper
 import com.softteco.template.utils.protocol.DeviceConnectionService
 import com.softteco.template.utils.protocol.DeviceConnectionStatus
+import com.softteco.template.utils.protocol.checkRemainingConnectionForService
 import com.softteco.template.utils.protocol.isServiceRunning
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
@@ -29,6 +31,7 @@ import kotlinx.coroutines.flow.StateFlow
 import no.nordicsemi.android.support.v18.scanner.ScanResult
 import timber.log.Timber
 import javax.inject.Inject
+import javax.inject.Provider
 import javax.inject.Singleton
 
 /**
@@ -40,7 +43,8 @@ import javax.inject.Singleton
 internal class BluetoothHelperImpl @Inject constructor(
     @ApplicationContext private val context: Context,
     bluetoothByteParser: BluetoothByteParser,
-    thermometerRepository: ThermometerRepository
+    thermometerRepository: ThermometerRepository,
+    private val zigbeeHelperProvider: Provider<ZigbeeHelper>
 ) : BluetoothHelper, BluetoothState {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
@@ -175,6 +179,10 @@ internal class BluetoothHelperImpl @Inject constructor(
     override fun observeDeviceConnectionStatus(): StateFlow<Map<String, DeviceConnectionStatus>> =
         deviceRepository.deviceConnectionStatusList
 
+    override fun removeDeviceFromCache(macAddress: String) {
+        deviceRepository.removeDevice(macAddress)
+    }
+
     // Private functions
 
     private fun initializeBluetoothReceiver() {
@@ -238,6 +246,13 @@ internal class BluetoothHelperImpl @Inject constructor(
     }
 
     private fun stopConnectionService() {
-        deviceOperationHandler.stopConnectionService(DeviceConnectionService::class.java)
+        // Check if there are any remaining connections before stopping the service
+        if (!checkRemainingConnectionForService(
+                deviceRepository.deviceConnectionStatusList,
+                zigbeeHelperProvider.get().observeDeviceConnectionStatus()
+            )
+        ) {
+            deviceOperationHandler.stopConnectionService(DeviceConnectionService::class.java)
+        }
     }
 }

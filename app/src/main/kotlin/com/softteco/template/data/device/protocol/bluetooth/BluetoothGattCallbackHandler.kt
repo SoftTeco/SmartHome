@@ -20,18 +20,32 @@ import java.time.LocalDateTime
 import java.util.UUID
 
 /**
+ * Configuration data for BluetoothGattCallbackHandler.
+ */
+internal data class GattCallbackConfig(
+    val bluetoothByteParser: BluetoothByteParser,
+    val thermometerRepository: ThermometerRepository,
+    val deviceRepository: BluetoothDeviceRepository,
+    val scope: CoroutineScope,
+    val onDeviceConnected: (BluetoothGatt) -> Unit,
+    val onDeviceDisconnected: (BluetoothGatt) -> Unit,
+    val onDeviceDataReceived: () -> Unit
+)
+
+/**
  * Handles Bluetooth GATT callbacks for device connection and data reception.
  */
 @SuppressLint("MissingPermission")
 internal class BluetoothGattCallbackHandler(
-    private val bluetoothByteParser: BluetoothByteParser,
-    private val thermometerRepository: ThermometerRepository,
-    private val deviceRepository: BluetoothDeviceRepository,
-    private val scope: CoroutineScope,
-    private val onDeviceConnected: (BluetoothGatt) -> Unit,
-    private val onDeviceDisconnected: (BluetoothGatt) -> Unit,
-    private val onDeviceDataReceived: () -> Unit
+    config: GattCallbackConfig
 ) : BluetoothGattCallback() {
+    private val bluetoothByteParser = config.bluetoothByteParser
+    private val thermometerRepository = config.thermometerRepository
+    private val deviceRepository = config.deviceRepository
+    private val scope = config.scope
+    private val onDeviceConnected = config.onDeviceConnected
+    private val onDeviceDisconnected = config.onDeviceDisconnected
+    private val onDeviceDataReceived = config.onDeviceDataReceived
 
     private companion object {
         val NOTIFICATION_DISABLE_VALUE = byteArrayOf(0x00, 0x00)
@@ -48,7 +62,7 @@ internal class BluetoothGattCallbackHandler(
 
     override fun onServicesDiscovered(gatt: BluetoothGatt, status: Int) {
         super.onServicesDiscovered(gatt, status)
-        
+
         when (status) {
             BluetoothGatt.GATT_SUCCESS -> setupCharacteristicNotification(gatt)
             else -> Timber.e("Service discovery failed with status: $status")
@@ -62,7 +76,7 @@ internal class BluetoothGattCallbackHandler(
     ) {
         handleCharacteristicChange(gatt, value)
     }
-    
+
     @Deprecated("Deprecated in Java")
     override fun onCharacteristicChanged(
         gatt: BluetoothGatt,
@@ -81,14 +95,14 @@ internal class BluetoothGattCallbackHandler(
             Timber.e("Service not found")
             return
         }
-        
+
         val characteristic = service.getCharacteristic(
             UUID.fromString(BuildConfig.BLUETOOTH_CHARACTERISTIC_UUID_VALUE)
         ) ?: run {
             Timber.e("Characteristic not found")
             return
         }
-        
+
         setCharacteristicNotification(gatt, characteristic, enable = true)
     }
 
@@ -98,19 +112,19 @@ internal class BluetoothGattCallbackHandler(
         enable: Boolean
     ) {
         gatt.setCharacteristicNotification(characteristic, enable)
-        
+
         val descriptor = characteristic.getDescriptor(
             UUID.fromString(BuildConfig.BLUETOOTH_DESCRIPTOR_UUID_VALUE)
         ) ?: run {
             Timber.e("Descriptor not found")
             return
         }
-        
+
         val descriptorValue = when {
             enable -> BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
             else -> NOTIFICATION_DISABLE_VALUE
         }
-        
+
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
             gatt.writeDescriptor(descriptor, descriptorValue)
         } else {
@@ -123,14 +137,14 @@ internal class BluetoothGattCallbackHandler(
 
     private fun handleCharacteristicChange(gatt: BluetoothGatt, value: ByteArray) {
         if (!shouldProcessCharacteristic()) return
-        
+
         readCharacteristicTimestamp = System.currentTimeMillis()
-        
+
         val device = deviceRepository.getDeviceStatus(gatt.device.address)?.device ?: run {
             Timber.w("Device not found for address: ${gatt.device.address}")
             return
         }
-        
+
         parseAndSaveThermometerData(value, device)
         onDeviceDataReceived()
     }
@@ -141,7 +155,7 @@ internal class BluetoothGattCallbackHandler(
     private fun parseAndSaveThermometerData(value: ByteArray, device: Device) {
         val data = bluetoothByteParser.parseBytes(value, device.model) as? ThermometerValues.DataLYWSD03MMC
             ?: return
-        
+
         scope.launch(Dispatchers.IO) {
             thermometerRepository.saveCurrentMeasurement(
                 ThermometerValues.DataLYWSD03MMC(
@@ -155,4 +169,3 @@ internal class BluetoothGattCallbackHandler(
         }
     }
 }
-

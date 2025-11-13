@@ -15,20 +15,20 @@ interface DeviceOperationHandler {
      * @return The device model
      */
     fun getDeviceModel(deviceName: String): Device.Model
-    
+
     /**
      * Get the device image resource path based on the device name.
      * @param deviceName The name of the device
      * @return The image resource path
      */
     fun getDeviceImage(deviceName: String): String
-    
+
     /**
      * Start a connection service for maintaining device connections.
      * @param serviceClass The service class to start
      */
     fun startConnectionService(serviceClass: Class<out Service>)
-    
+
     /**
      * Stop a connection service.
      * @param serviceClass The service class to stop

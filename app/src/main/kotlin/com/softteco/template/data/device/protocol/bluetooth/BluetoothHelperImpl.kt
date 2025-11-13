@@ -38,6 +38,7 @@ import javax.inject.Singleton
  * Main coordinator for Bluetooth operations.
  * Delegates responsibilities to specialized managers.
  */
+@Suppress("TooManyFunctions")
 @SuppressLint("MissingPermission")
 @Singleton
 internal class BluetoothHelperImpl @Inject constructor(
@@ -66,17 +67,19 @@ internal class BluetoothHelperImpl @Inject constructor(
 
     init {
         deviceRepository = BluetoothDeviceRepository(thermometerRepository, scope)
-        
+
         gattHandler = BluetoothGattCallbackHandler(
-            bluetoothByteParser = bluetoothByteParser,
-            thermometerRepository = thermometerRepository,
-            deviceRepository = deviceRepository,
-            scope = scope,
-            onDeviceConnected = ::handleDeviceConnected,
-            onDeviceDisconnected = ::handleDeviceDisconnected,
-            onDeviceDataReceived = { deviceDataReceivedCallback?.invoke() }
+            GattCallbackConfig(
+                bluetoothByteParser = bluetoothByteParser,
+                thermometerRepository = thermometerRepository,
+                deviceRepository = deviceRepository,
+                scope = scope,
+                onDeviceConnected = ::handleDeviceConnected,
+                onDeviceDisconnected = ::handleDeviceDisconnected,
+                onDeviceDataReceived = { deviceDataReceivedCallback?.invoke() }
+            )
         )
-        
+
         connectionManager = BluetoothConnectionManager(
             context = context,
             scope = scope,
@@ -93,7 +96,7 @@ internal class BluetoothHelperImpl @Inject constructor(
     ) {
         this.deviceOperationHandler = deviceOperationHandler
         this.receiverManager = receiverManager
-        
+
         scanManager = BluetoothScanManager(
             deviceOperationHandler = deviceOperationHandler,
             permissionHandler = permissionHandler,
@@ -102,7 +105,7 @@ internal class BluetoothHelperImpl @Inject constructor(
             onDeviceDiscovered = deviceRepository::updateDeviceStatus,
             onScanResultCallback = { scanResultCallback?.invoke(it) }
         )
-        
+
         initializeBluetoothReceiver()
         deviceRepository.loadSavedDevices()
     }
@@ -216,13 +219,13 @@ internal class BluetoothHelperImpl @Inject constructor(
 
     private fun handleDeviceConnected(gatt: BluetoothGatt) {
         connectionManager.addConnectedDevice(gatt.device.address, gatt)
-        
+
         val currentStatus = deviceRepository.getDeviceStatus(gatt.device.address) ?: return
         val updatedStatus = DeviceConnectionStatus.connected(currentStatus.device)
-        
+
         deviceRepository.updateDeviceStatus(gatt.device.address, updatedStatus)
         deviceRepository.saveNewDevice(currentStatus.device)
-        
+
         gatt.discoverServices()
         deviceConnectedCallback?.invoke()
         startConnectionServiceIfNeeded()
@@ -231,9 +234,9 @@ internal class BluetoothHelperImpl @Inject constructor(
     private fun handleDeviceDisconnected(gatt: BluetoothGatt) {
         val currentStatus = deviceRepository.getDeviceStatus(gatt.device.address) ?: return
         val updatedStatus = DeviceConnectionStatus.disconnected(currentStatus.device)
-        
+
         deviceRepository.updateDeviceStatus(gatt.device.address, updatedStatus)
-        
+
         connectionManager.closeConnection(gatt)
         deviceDisconnectedCallback?.invoke()
         stopConnectionService()

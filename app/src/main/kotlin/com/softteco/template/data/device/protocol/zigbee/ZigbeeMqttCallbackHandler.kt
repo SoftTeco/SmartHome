@@ -14,17 +14,31 @@ import timber.log.Timber
 import java.time.LocalDateTime
 
 /**
+ * Configuration data for ZigbeeMqttCallbackHandler.
+ */
+internal data class MqttCallbackConfig(
+    val thermometerRepository: ThermometerRepository,
+    val deviceRepository: ZigbeeDeviceRepository,
+    val scope: CoroutineScope,
+    val scanManager: ZigbeeScanManager,
+    val onConnectionComplete: (Boolean) -> Unit,
+    val onConnectionLost: () -> Unit,
+    val onDeviceDataReceived: () -> Unit
+)
+
+/**
  * Handles MQTT callbacks for connection state and data reception.
  */
 internal class ZigbeeMqttCallbackHandler(
-    private val thermometerRepository: ThermometerRepository,
-    private val deviceRepository: ZigbeeDeviceRepository,
-    private val scope: CoroutineScope,
-    private val scanManager: ZigbeeScanManager,
-    private val onConnectionComplete: (Boolean) -> Unit,
-    private val onConnectionLost: () -> Unit,
-    private val onDeviceDataReceived: () -> Unit
+    config: MqttCallbackConfig
 ) : MqttCallbackExtended {
+    private val thermometerRepository = config.thermometerRepository
+    private val deviceRepository = config.deviceRepository
+    private val scope = config.scope
+    private val scanManager = config.scanManager
+    private val onConnectionComplete = config.onConnectionComplete
+    private val onConnectionLost = config.onConnectionLost
+    private val onDeviceDataReceived = config.onDeviceDataReceived
 
     override fun connectComplete(reconnect: Boolean, serverURI: String) {
         Timber.d("MQTT connection complete. Reconnect: $reconnect, URI: $serverURI")
@@ -63,7 +77,7 @@ internal class ZigbeeMqttCallbackHandler(
         try {
             val macAddress = topic.split("/")[1]
             val jsonData = JSONObject(String(message.payload))
-            
+
             val thermometerData = ThermometerValues.DataLYWSD03MMC(
                 temperature = jsonData.getDouble("temperature"),
                 humidity = jsonData.getInt("humidity"),
@@ -71,15 +85,16 @@ internal class ZigbeeMqttCallbackHandler(
                 macAddress = macAddress,
                 timestamp = LocalDateTime.now()
             )
-            
+
             scope.launch(Dispatchers.IO) {
                 thermometerRepository.saveCurrentMeasurement(thermometerData)
             }
-            
+
             onDeviceDataReceived()
-        } catch (e: Exception) {
+        } catch (e: org.json.JSONException) {
             Timber.e(e, "Failed to parse device data message")
+        } catch (e: IllegalArgumentException) {
+            Timber.e(e, "Invalid device data format")
         }
     }
 }
-

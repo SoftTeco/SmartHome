@@ -13,25 +13,25 @@ data class DeviceConnectionStatus(
             isConnected = false,
             connectionState = ConnectionState.IDLE
         )
-        
+
         fun searching(device: Device) = DeviceConnectionStatus(
             device = device,
             isConnected = false,
             connectionState = ConnectionState.SEARCHING
         )
-        
+
         fun connecting(device: Device) = DeviceConnectionStatus(
             device = device,
             isConnected = false,
             connectionState = ConnectionState.CONNECTING
         )
-        
+
         fun connected(device: Device) = DeviceConnectionStatus(
             device = device,
             isConnected = true,
             connectionState = ConnectionState.CONNECTED
         )
-        
+
         fun disconnected(device: Device) = DeviceConnectionStatus(
             device = device,
             isConnected = false,

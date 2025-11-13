@@ -3,7 +3,6 @@ package com.softteco.template
 import android.app.Activity
 import android.app.Service
 import android.content.BroadcastReceiver
-import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.Bundle
@@ -32,9 +31,9 @@ import com.softteco.template.ui.components.dialog.DialogController
 import com.softteco.template.ui.components.snackbar.SnackbarController
 import com.softteco.template.ui.theme.AppTheme
 import com.softteco.template.utils.protocol.checkBluetoothSupport
+import com.softteco.template.utils.protocol.checkEnableDeviceModules
 import com.softteco.template.utils.protocol.getDeviceImage
 import com.softteco.template.utils.protocol.getDeviceModel
-import com.softteco.template.utils.protocol.checkEnableDeviceModules
 import com.softteco.template.utils.protocol.hasPermissions
 import com.softteco.template.utils.protocol.registerCustomReceiver
 import com.softteco.template.utils.protocol.startConnectionService
@@ -43,10 +42,11 @@ import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
 @AndroidEntryPoint
-class MainActivity : ComponentActivity(), 
-    DeviceOperationHandler, 
-    PermissionHandler, 
-    IntentLauncher, 
+class MainActivity :
+    ComponentActivity(),
+    DeviceOperationHandler,
+    PermissionHandler,
+    IntentLauncher,
     ReceiverManager,
     BluetoothStateChecker {
 
@@ -141,8 +141,7 @@ class MainActivity : ComponentActivity(),
     }
 
     // PermissionHandler interface methods
-    override fun hasBluetoothPermissions(): Boolean = 
-        (this as Activity).hasPermissions()
+    override fun hasBluetoothPermissions(): Boolean = (this as Activity).hasPermissions()
 
     // IntentLauncher interface methods
     override fun launchIntent(intent: Intent) {
@@ -159,9 +158,7 @@ class MainActivity : ComponentActivity(),
     }
 
     // BluetoothStateChecker interface methods
-    override fun isBluetoothSupported(): Boolean = 
-        applicationContext.checkBluetoothSupport()
+    override fun isBluetoothSupported(): Boolean = applicationContext.checkBluetoothSupport()
 
-    override fun checkModulesState() = 
-        applicationContext.checkEnableDeviceModules()
+    override fun checkModulesState() = applicationContext.checkEnableDeviceModules()
 }

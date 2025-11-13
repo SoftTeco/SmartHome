@@ -46,8 +46,7 @@ internal class BluetoothConnectionManager(
         connectedDevices[macAddress]?.disconnect()
     }
 
-    fun isConnected(macAddress: String): Boolean = 
-        connectedDevices.containsKey(macAddress)
+    fun isConnected(macAddress: String): Boolean = connectedDevices.containsKey(macAddress)
 
     fun addConnectedDevice(macAddress: String, gatt: BluetoothGatt) {
         connectedDevices[macAddress] = gatt

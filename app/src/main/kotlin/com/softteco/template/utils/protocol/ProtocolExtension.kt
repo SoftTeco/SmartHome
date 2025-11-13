@@ -55,6 +55,6 @@ fun checkRemainingConnectionForService(
     bluetoothDevicesConnectionStatusList: StateFlow<Map<String, DeviceConnectionStatus>>?,
     zigbeeDevicesConnectionStatusList: StateFlow<Map<String, DeviceConnectionStatus>>?
 ) = (
-        bluetoothDevicesConnectionStatusList?.value?.values?.any { it.isConnected } == true ||
-                zigbeeDevicesConnectionStatusList?.value?.values?.any { it.isConnected } == true
-        )
+    bluetoothDevicesConnectionStatusList?.value?.values?.any { it.isConnected } == true ||
+        zigbeeDevicesConnectionStatusList?.value?.values?.any { it.isConnected } == true
+    )

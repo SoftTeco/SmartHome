@@ -44,7 +44,7 @@ fun Context.getLocationManager(): LocationManager? =
 
 fun Context.checkBluetoothSupport() =
     getBluetoothManager()?.adapter != null &&
-            packageManager?.hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE) == true
+        packageManager?.hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE) == true
 
 fun Context.checkEnableDeviceModules(): PermissionType {
     var permissionType = PermissionType.BLUETOOTH_AND_LOCATION_TURNED_ON

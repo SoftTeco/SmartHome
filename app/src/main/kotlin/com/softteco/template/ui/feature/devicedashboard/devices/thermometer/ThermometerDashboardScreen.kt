@@ -47,6 +47,7 @@ import com.softteco.template.ui.feature.devicedashboard.devices.thermometer.Ther
 import com.softteco.template.ui.feature.devicedashboard.devices.thermometer.ThermometerDashboardViewModel.TimeIntervalMenu
 import com.softteco.template.ui.theme.AppTheme
 import com.softteco.template.ui.theme.Dimens
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 @Composable
@@ -89,26 +90,98 @@ private fun ScreenContent(
     modifier: Modifier = Modifier,
     onBackClicked: () -> Unit
 ) {
-    Box(modifier = modifier.fillMaxSize()) {
-        Column(
-            modifier = Modifier
-                .background(MaterialTheme.colorScheme.background)
-                .fillMaxSize(),
-            verticalArrangement = Arrangement.spacedBy(Dimens.PaddingDefault),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-        var chartType by remember { mutableStateOf(TEMPERATURE) }
-        var previousChartType by remember { mutableStateOf(chartType) }
-        var timeIntervalMenu by rememberSaveable { mutableStateOf(TimeIntervalMenu.Minute) }
-        val scope = rememberCoroutineScope()
+    var chartType by remember { mutableStateOf(TEMPERATURE) }
+    var previousChartType by remember { mutableStateOf(chartType) }
+    var timeIntervalMenu by rememberSaveable { mutableStateOf(TimeIntervalMenu.Minute) }
+    val scope = rememberCoroutineScope()
 
+    val handleChartTypeChange: (MeasurementType) -> Unit = { newType ->
+        chartType = newType
+        updateCurrentMeasurement(timeIntervalMenu, chartType)
+        if (previousChartType != chartType) {
+            updateThermometerHistoryByInterval(timeIntervalMenu, chartType)
+            previousChartType = chartType
+        }
+    }
+
+    Box(modifier = modifier.fillMaxSize()) {
+        DashboardContent(
+            state = state,
+            chartType = chartType,
+            timeIntervalMenu = timeIntervalMenu,
+            onTimeIntervalChange = { newInterval ->
+                timeIntervalMenu = newInterval
+                updateThermometerHistoryByInterval(timeIntervalMenu, chartType)
+            },
+            onChartTypeChange = handleChartTypeChange,
+            onSettingsClick = onSettingsClick,
+            onBackClicked = onBackClicked,
+            updateCharts = updateCharts,
+            updateCurrentMeasurement = updateCurrentMeasurement,
+            updateThermometerHistoryByInterval = updateThermometerHistoryByInterval,
+            scope = scope,
+            previousChartType = previousChartType,
+            onPreviousChartTypeChange = { previousChartType = it }
+        )
+
+        LoadingIndicator(state)
+    }
+}
+
+@Composable
+private fun LoadingIndicator(state: ThermometerDashboardViewModel.State) {
+    val hasCardData = state.thermometer?.currentTemperature != null &&
+        state.thermometer.currentTemperature != 0.0 && state.thermometer.currentHumidity != 0
+    val hasChartData = state.thermometer?.temperatureHistory?.isNotEmpty() == true ||
+        state.thermometer?.humidityHistory?.isNotEmpty() == true
+
+    if (state.loading && !hasCardData && !hasChartData) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background.copy(alpha = 0.9f)),
+            contentAlignment = Alignment.Center
+        ) {
+            CircularProgressIndicator(
+                modifier = Modifier.size(64.dp),
+                strokeWidth = 4.dp
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+@Suppress("LongParameterList", "LongMethod")
+private fun DashboardContent(
+    state: ThermometerDashboardViewModel.State,
+    chartType: MeasurementType,
+    timeIntervalMenu: TimeIntervalMenu,
+    onTimeIntervalChange: (TimeIntervalMenu) -> Unit,
+    onChartTypeChange: (MeasurementType) -> Unit,
+    onSettingsClick: (deviceId: String) -> Unit,
+    onBackClicked: () -> Unit,
+    updateCharts: (callback: () -> Unit) -> Unit,
+    updateCurrentMeasurement: (unit: TimeIntervalMenu, type: MeasurementType) -> Unit,
+    updateThermometerHistoryByInterval: (unit: TimeIntervalMenu, type: MeasurementType) -> Unit,
+    scope: CoroutineScope,
+    previousChartType: MeasurementType,
+    onPreviousChartTypeChange: (MeasurementType) -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .background(MaterialTheme.colorScheme.background)
+            .fillMaxSize(),
+        verticalArrangement = Arrangement.spacedBy(Dimens.PaddingDefault),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
         LaunchedEffect(Unit) {
             updateCharts {
                 scope.launch {
                     updateCurrentMeasurement(timeIntervalMenu, chartType)
                     if (previousChartType != chartType) {
                         updateThermometerHistoryByInterval(timeIntervalMenu, chartType)
-                        previousChartType = chartType
+                        onPreviousChartTypeChange(chartType)
                     }
                 }
             }
@@ -119,67 +192,14 @@ private fun ScreenContent(
             modifier = Modifier.fillMaxWidth(),
             onBackClicked = onBackClicked
         )
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.Top,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            DashboardValueBlock(
-                value = state.thermometer?.currentTemperature,
-                valueName = stringResource(R.string.temperature),
-                measurementUnit = stringResource(R.string.degrees_celsius_icon),
-                icon = Icons.Filled.SevereCold,
-                modifier = Modifier
-                    .padding(start = Dimens.PaddingDefault, end = Dimens.PaddingSmall)
-                    .weight(1f),
-                onClick = {
-                    chartType = TEMPERATURE
-                    updateCurrentMeasurement(timeIntervalMenu, chartType)
-                    if (previousChartType != chartType) {
-                        updateThermometerHistoryByInterval(timeIntervalMenu, chartType)
-                        previousChartType = chartType
-                    }
-                }
-            )
-
-            DashboardValueBlock(
-                value = state.thermometer?.currentHumidity,
-                valueName = stringResource(R.string.humidity),
-                measurementUnit = stringResource(R.string.percent_icon),
-                icon = Icons.Outlined.WaterDrop,
-                modifier = Modifier
-                    .padding(start = Dimens.PaddingSmall, end = Dimens.PaddingDefault)
-                    .weight(1f),
-                onClick = {
-                    chartType = HUMIDITY
-                    updateCurrentMeasurement(timeIntervalMenu, chartType)
-                    if (previousChartType != chartType) {
-                        updateThermometerHistoryByInterval(timeIntervalMenu, chartType)
-                        previousChartType = chartType
-                    }
-                }
-            )
-        }
-
-        SingleChoiceSegmentedButtonRow(
-            Modifier
-                .padding(horizontal = Dimens.PaddingDefault)
-                .fillMaxWidth()
-        ) {
-            TimeIntervalMenu.entries.forEachIndexed { index, segmentUIFramework ->
-                SegmentedButton(
-                    selected = timeIntervalMenu == segmentUIFramework,
-                    onClick = {
-                        timeIntervalMenu = segmentUIFramework
-                        updateThermometerHistoryByInterval(timeIntervalMenu, chartType)
-                    },
-                    shape = SegmentedButtonDefaults.itemShape(index, TimeIntervalMenu.entries.size),
-                ) {
-                    Text(stringResource(segmentUIFramework.labelResourceID))
-                }
-            }
-        }
-
+        MeasurementValueBlocks(
+            state = state,
+            onChartTypeChange = onChartTypeChange
+        )
+        TimeIntervalSelector(
+            timeIntervalMenu = timeIntervalMenu,
+            onTimeIntervalChange = onTimeIntervalChange
+        )
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
@@ -188,23 +208,60 @@ private fun ScreenContent(
             Chart(state, chartType, timeIntervalMenu)
         }
     }
+}
 
-        val hasCardData = state.thermometer?.currentTemperature != null &&
-                state.thermometer.currentTemperature != 0.0 && state.thermometer.currentHumidity != 0
-        val hasChartData = state.thermometer?.temperatureHistory?.isNotEmpty() == true ||
-                          state.thermometer?.humidityHistory?.isNotEmpty() == true
+@Composable
+private fun MeasurementValueBlocks(
+    state: ThermometerDashboardViewModel.State,
+    onChartTypeChange: (MeasurementType) -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.Top,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        DashboardValueBlock(
+            value = state.thermometer?.currentTemperature,
+            valueName = stringResource(R.string.temperature),
+            measurementUnit = stringResource(R.string.degrees_celsius_icon),
+            icon = Icons.Filled.SevereCold,
+            modifier = Modifier
+                .padding(start = Dimens.PaddingDefault, end = Dimens.PaddingSmall)
+                .weight(1f),
+            onClick = { onChartTypeChange(TEMPERATURE) }
+        )
 
-        if (state.loading && !hasCardData && !hasChartData) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.background.copy(alpha = 0.9f)),
-                contentAlignment = Alignment.Center
+        DashboardValueBlock(
+            value = state.thermometer?.currentHumidity,
+            valueName = stringResource(R.string.humidity),
+            measurementUnit = stringResource(R.string.percent_icon),
+            icon = Icons.Outlined.WaterDrop,
+            modifier = Modifier
+                .padding(start = Dimens.PaddingSmall, end = Dimens.PaddingDefault)
+                .weight(1f),
+            onClick = { onChartTypeChange(HUMIDITY) }
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun TimeIntervalSelector(
+    timeIntervalMenu: TimeIntervalMenu,
+    onTimeIntervalChange: (TimeIntervalMenu) -> Unit
+) {
+    SingleChoiceSegmentedButtonRow(
+        Modifier
+            .padding(horizontal = Dimens.PaddingDefault)
+            .fillMaxWidth()
+    ) {
+        TimeIntervalMenu.entries.forEachIndexed { index, segmentUIFramework ->
+            SegmentedButton(
+                selected = timeIntervalMenu == segmentUIFramework,
+                onClick = { onTimeIntervalChange(segmentUIFramework) },
+                shape = SegmentedButtonDefaults.itemShape(index, TimeIntervalMenu.entries.size),
             ) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(64.dp),
-                    strokeWidth = 4.dp
-                )
+                Text(stringResource(segmentUIFramework.labelResourceID))
             }
         }
     }

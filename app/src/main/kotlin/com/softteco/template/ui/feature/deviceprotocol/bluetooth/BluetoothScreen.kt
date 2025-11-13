@@ -103,7 +103,7 @@ private fun ScreenContent(
                 devicesConnectionStatusList = state.devicesConnectionStatusList,
                 onItemClicked = onItemClicked
             )
-            
+
             if (state.devices.isEmpty()) {
                 Box(
                     modifier = Modifier
@@ -180,7 +180,7 @@ fun BluetoothDeviceCard(
                     overflow = TextOverflow.Ellipsis,
                     maxLines = 1
                 )
-                
+
                 // Show status indicator for SEARCHING or CONNECTING states
                 when (deviceConnectionStatus.connectionState) {
                     com.softteco.template.utils.protocol.ConnectionState.SEARCHING -> {
@@ -222,13 +222,16 @@ fun BluetoothDeviceCard(
             }
             PrimaryButton(
                 buttonText = stringResource(
-                    id = if (deviceConnectionStatus.connectionState == com.softteco.template.utils.protocol.ConnectionState.CONNECTED) {
+                    id = if (deviceConnectionStatus.connectionState ==
+                        com.softteco.template.utils.protocol.ConnectionState.CONNECTED
+                    ) {
                         R.string.disconnect
                     } else {
                         R.string.connect
                     }
                 ),
-                loading = deviceConnectionStatus.connectionState == com.softteco.template.utils.protocol.ConnectionState.CONNECTING,
+                loading = deviceConnectionStatus.connectionState ==
+                    com.softteco.template.utils.protocol.ConnectionState.CONNECTING,
                 modifier = Modifier.weight(1F),
                 onClick = { onItemClicked(bluetoothDevice) },
             )

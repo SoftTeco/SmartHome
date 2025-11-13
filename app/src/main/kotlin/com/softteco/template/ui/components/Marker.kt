@@ -83,13 +83,14 @@ internal fun rememberMarker(
                 label = label,
                 labelPosition = labelPosition,
                 indicator = if (showIndicator) indicator else null,
-                indicatorSizeDp = 36f,
+                indicatorSizeDp = INDICATOR_SIZE_DP,
                 setIndicatorColor =
                 if (showIndicator) {
                     { color ->
-                        indicatorRearComponent.color = (color and 0x00FFFFFF) or (((0.15f * 255).toInt()) shl 24)
+                        indicatorRearComponent.color = (color and COLOR_MASK_FFFFFF) or
+                            (((INDICATOR_ALPHA * COLOR_MAX_VALUE).toInt()) shl ALPHA_SHIFT)
                         indicatorCenterComponent.color = color
-                        indicatorCenterComponent.setShadow(radius = 12f, color = color)
+                        indicatorCenterComponent.setShadow(radius = INDICATOR_SHADOW_RADIUS, color = color)
                     }
                 } else {
                     null
@@ -116,3 +117,9 @@ internal fun rememberMarker(
 private const val LABEL_BACKGROUND_SHADOW_RADIUS_DP = 4f
 private const val LABEL_BACKGROUND_SHADOW_DY_DP = 2f
 private const val CLIPPING_FREE_SHADOW_RADIUS_MULTIPLIER = 1.4f
+private const val INDICATOR_SIZE_DP = 36f
+private const val COLOR_MASK_FFFFFF = 0x00FFFFFF
+private const val INDICATOR_ALPHA = 0.15f
+private const val COLOR_MAX_VALUE = 255
+private const val ALPHA_SHIFT = 24
+private const val INDICATOR_SHADOW_RADIUS = 12f

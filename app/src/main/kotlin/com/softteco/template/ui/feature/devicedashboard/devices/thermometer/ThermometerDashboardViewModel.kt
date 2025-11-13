@@ -88,62 +88,73 @@ class ThermometerDashboardViewModel @Inject constructor(
     fun getThermometerHistory() {
         loading.value = true
         viewModelScope.launch(appDispatchers.io) {
-            val result = thermometerRepository.getThermometerData(state.value.deviceMacAddress)
-            when (result) {
-                is Result.Success -> {
-                    thermometer.value = result.data
-                    val temperatureHistory = emptyMap<LocalDateTime, Float>().toMutableMap()
-                    val humidityHistory = emptyMap<LocalDateTime, Float>().toMutableMap()
-
-                    result.data.valuesHistory.forEach {
-                        (it as ThermometerValues.DataLYWSD03MMC).let { data ->
-                            temperatureHistory[data.timestamp] = data.temperature.toFloat()
-                            humidityHistory[data.timestamp] = data.humidity.toFloat()
-                        }
-                    }
-
-                    fullTemperatureHistory.value = temperatureHistory
-                    fullHumidityHistory.value = humidityHistory
-
-                    val hasCurrentData = result.data.currentTemperature != 0.0 && result.data.currentHumidity != 0
-                    val lastEntry = result.data.valuesHistory.lastOrNull() as? ThermometerValues.DataLYWSD03MMC
-                    val isDataFresh = if (lastEntry != null) {
-                        val now = LocalDateTime.now()
-                        val ageInMinutes = Duration.between(lastEntry.timestamp, now).toMinutes()
-                        ageInMinutes <= 1
-                    } else {
-                        false
-                    }
-
-                    val displayTemp = if (result.data.currentTemperature == 0.0 && isDataFresh && lastEntry != null) {
-                        lastEntry.temperature
-                    } else {
-                        result.data.currentTemperature
-                    }
-                    val displayHum = if (result.data.currentHumidity == 0 && isDataFresh && lastEntry != null) {
-                        lastEntry.humidity
-                    } else {
-                        result.data.currentHumidity
-                    }
-
-                    thermometer.value = result.data.copy(
-                        temperatureHistory = temperatureHistory,
-                        humidityHistory = humidityHistory,
-                        currentTemperature = displayTemp,
-                        currentHumidity = displayHum
-                    )
-
-                    if (hasCurrentData || isDataFresh) {
-                        loading.value = false
-                    }
-                }
-
-                is Result.Error -> {
-                    loading.value = false
-                    snackbarController.showSnackbar(result.error.messageRes)
-                }
+            when (val result = thermometerRepository.getThermometerData(state.value.deviceMacAddress)) {
+                is Result.Success -> handleThermometerDataSuccess(result.data)
+                is Result.Error -> handleThermometerDataError(result.error.messageRes)
             }
         }
+    }
+
+    private fun handleThermometerDataSuccess(data: ThermometerData) {
+        thermometer.value = data
+
+        val (temperatureHistory, humidityHistory) = extractHistoryMaps(data.valuesHistory)
+        fullTemperatureHistory.value = temperatureHistory
+        fullHumidityHistory.value = humidityHistory
+
+        val lastEntry = data.valuesHistory.lastOrNull() as? ThermometerValues.DataLYWSD03MMC
+        val isDataFresh = isEntryFresh(lastEntry)
+        val currentTemp = if (isDataFresh && lastEntry != null) {
+            lastEntry.temperature
+        } else {
+            data.currentTemperature
+        }
+        val currentHum = if (isDataFresh && lastEntry != null) {
+            lastEntry.humidity
+        } else {
+            data.currentHumidity
+        }
+        val hasCurrentData = currentTemp != 0.0 && currentHum != 0
+
+        thermometer.value = data.copy(
+            temperatureHistory = temperatureHistory,
+            humidityHistory = humidityHistory,
+            currentTemperature = currentTemp,
+            currentHumidity = currentHum
+        )
+
+        val hasHistoryToDisplay = temperatureHistory.isNotEmpty() || humidityHistory.isNotEmpty()
+        if (hasCurrentData || hasHistoryToDisplay) {
+            loading.value = false
+        }
+    }
+
+    private fun extractHistoryMaps(
+        valuesHistory: List<ThermometerValues>
+    ): Pair<Map<LocalDateTime, Float>, Map<LocalDateTime, Float>> {
+        val temperatureHistory = mutableMapOf<LocalDateTime, Float>()
+        val humidityHistory = mutableMapOf<LocalDateTime, Float>()
+
+        valuesHistory.forEach {
+            (it as ThermometerValues.DataLYWSD03MMC).let { data ->
+                temperatureHistory[data.timestamp] = data.temperature.toFloat()
+                humidityHistory[data.timestamp] = data.humidity.toFloat()
+            }
+        }
+
+        return Pair(temperatureHistory, humidityHistory)
+    }
+
+    private fun isEntryFresh(lastEntry: ThermometerValues.DataLYWSD03MMC?): Boolean {
+        if (lastEntry == null) return false
+        val now = LocalDateTime.now()
+        val ageInMinutes = Duration.between(lastEntry.timestamp, now).toMinutes()
+        return ageInMinutes <= 1
+    }
+
+    private fun handleThermometerDataError(messageRes: Int) {
+        loading.value = false
+        snackbarController.showSnackbar(messageRes)
     }
 
     fun onDeviceDataReceived(callback: () -> Unit) {
@@ -173,7 +184,7 @@ class ThermometerDashboardViewModel @Inject constructor(
         } else {
             fullHistory
         }
-        
+
         thermometer.value = when (type) {
             MeasurementType.TEMPERATURE -> {
                 thermometer.value?.copy(temperatureHistory = updatedHistory)
@@ -195,66 +206,116 @@ class ThermometerDashboardViewModel @Inject constructor(
 
     fun getCurrentMeasurement(unit: TimeIntervalMenu, measurementType: MeasurementType) {
         viewModelScope.launch(appDispatchers.io) {
-            val result = thermometerRepository.getCurrentMeasurement(state.value.deviceMacAddress)
-
-            when (result) {
+            when (val result = thermometerRepository.getCurrentMeasurement(state.value.deviceMacAddress)) {
                 is Result.Success -> {
-                    val data = result.data as ThermometerValues.DataLYWSD03MMC
-                    val newMeasurementValue = when (measurementType) {
-                        MeasurementType.TEMPERATURE -> data.temperature
-                        MeasurementType.HUMIDITY -> data.humidity
-                    }
-                    val currentHistory = when (measurementType) {
-                        MeasurementType.TEMPERATURE -> fullTemperatureHistory.value
-                        MeasurementType.HUMIDITY -> fullHumidityHistory.value
-                    }
-                    val lastEntryTime = currentHistory.keys.maxOrNull()
-                    val now = LocalDateTime.now()
-                    if (lastEntryTime == null ||
-                        Duration.between(lastEntryTime, now).toMinutes() >= MIN_VALUES_INTERVAL
-                    ) {
-                        val updatedHistory = currentHistory.toMutableMap()
-                        updatedHistory[now] = newMeasurementValue.toFloat()
-
-                        val updatedThermometerData = when (measurementType) {
-                            MeasurementType.TEMPERATURE -> thermometer.value?.copy(
-                                temperatureHistory = updatedHistory,
-                                currentTemperature = data.temperature,
-                                currentHumidity = data.humidity
-                            )
-
-                            MeasurementType.HUMIDITY -> thermometer.value?.copy(
-                                humidityHistory = updatedHistory,
-                                currentTemperature = data.temperature,
-                                currentHumidity = data.humidity
-                            )
-                        }
-
-                        thermometer.value = updatedThermometerData
-
-                        when (measurementType) {
-                            MeasurementType.TEMPERATURE -> {
-                                fullTemperatureHistory.value = updatedHistory
-                            }
-                            MeasurementType.HUMIDITY -> {
-                                fullHumidityHistory.value = updatedHistory
-                            }
-                        }
-
-                        if (unit != TimeIntervalMenu.Minute) {
-                            updateThermometerHistoryByInterval(unit, measurementType)
-                        }
-                    }
-                    
-                    if (loading.value) {
-                        loading.value = false
-                    }
+                    handleCurrentMeasurementSuccess(result.data, unit, measurementType)
                 }
-
                 is Result.Error -> {
                     snackbarController.showSnackbar(result.error.messageRes)
                 }
             }
+        }
+    }
+
+    private fun handleCurrentMeasurementSuccess(
+        values: ThermometerValues,
+        unit: TimeIntervalMenu,
+        measurementType: MeasurementType
+    ) {
+        val data = values as ThermometerValues.DataLYWSD03MMC
+        val currentHistory = getCurrentHistory(measurementType)
+        val now = LocalDateTime.now()
+
+        if (shouldUpdateHistory(currentHistory, now)) {
+            val newMeasurementValue = getMeasurementValue(data, measurementType)
+            updateHistoryAndThermometer(
+                data = data,
+                currentHistory = currentHistory,
+                now = now,
+                newMeasurementValue = newMeasurementValue,
+                measurementType = measurementType,
+                unit = unit
+            )
+        }
+
+        if (loading.value) {
+            loading.value = false
+        }
+    }
+
+    private fun getCurrentHistory(measurementType: MeasurementType): Map<LocalDateTime, Float> {
+        return when (measurementType) {
+            MeasurementType.TEMPERATURE -> fullTemperatureHistory.value
+            MeasurementType.HUMIDITY -> fullHumidityHistory.value
+        }
+    }
+
+    private fun getMeasurementValue(
+        data: ThermometerValues.DataLYWSD03MMC,
+        measurementType: MeasurementType
+    ): Number {
+        return when (measurementType) {
+            MeasurementType.TEMPERATURE -> data.temperature
+            MeasurementType.HUMIDITY -> data.humidity
+        }
+    }
+
+    private fun shouldUpdateHistory(currentHistory: Map<LocalDateTime, Float>, now: LocalDateTime): Boolean {
+        val lastEntryTime = currentHistory.keys.maxOrNull()
+        return lastEntryTime == null || Duration.between(lastEntryTime, now).toMinutes() >= MIN_VALUES_INTERVAL
+    }
+
+    private fun updateHistoryAndThermometer(
+        data: ThermometerValues.DataLYWSD03MMC,
+        currentHistory: Map<LocalDateTime, Float>,
+        now: LocalDateTime,
+        newMeasurementValue: Number,
+        measurementType: MeasurementType,
+        unit: TimeIntervalMenu
+    ) {
+        val updatedHistory = currentHistory.toMutableMap()
+        updatedHistory[now] = newMeasurementValue.toFloat()
+
+        val updatedThermometerData = createUpdatedThermometerData(
+            data = data,
+            updatedHistory = updatedHistory,
+            measurementType = measurementType
+        )
+
+        thermometer.value = updatedThermometerData
+        updateFullHistory(measurementType, updatedHistory)
+
+        if (unit != TimeIntervalMenu.Minute) {
+            updateThermometerHistoryByInterval(unit, measurementType)
+        }
+    }
+
+    private fun createUpdatedThermometerData(
+        data: ThermometerValues.DataLYWSD03MMC,
+        updatedHistory: Map<LocalDateTime, Float>,
+        measurementType: MeasurementType
+    ): ThermometerData? {
+        return when (measurementType) {
+            MeasurementType.TEMPERATURE -> thermometer.value?.copy(
+                temperatureHistory = updatedHistory,
+                currentTemperature = data.temperature,
+                currentHumidity = data.humidity
+            )
+            MeasurementType.HUMIDITY -> thermometer.value?.copy(
+                humidityHistory = updatedHistory,
+                currentTemperature = data.temperature,
+                currentHumidity = data.humidity
+            )
+        }
+    }
+
+    private fun updateFullHistory(
+        measurementType: MeasurementType,
+        updatedHistory: Map<LocalDateTime, Float>
+    ) {
+        when (measurementType) {
+            MeasurementType.TEMPERATURE -> fullTemperatureHistory.value = updatedHistory
+            MeasurementType.HUMIDITY -> fullHumidityHistory.value = updatedHistory
         }
     }
 

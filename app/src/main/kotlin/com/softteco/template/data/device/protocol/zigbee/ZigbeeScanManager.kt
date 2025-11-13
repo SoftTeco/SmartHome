@@ -26,18 +26,20 @@ internal class ZigbeeScanManager(
         try {
             val devicesJson = String(message.payload)
             val devices = parseZigbeeDevices(devicesJson)
-            
+
             devices.forEach { device ->
                 device.modelId?.let { modelId ->
                     val createdDevice = createDevice(device.ieeeAddress, modelId)
                     val status = DeviceConnectionStatus.searching(createdDevice)
-                    
+
                     onDeviceDiscovered(device.ieeeAddress, status)
                     onScanResultCallback?.invoke(device)
                 }
             }
-        } catch (e: Exception) {
+        } catch (e: org.json.JSONException) {
             Timber.e(e, "Failed to parse device discovery message")
+        } catch (e: IllegalArgumentException) {
+            Timber.e(e, "Invalid device discovery format")
         }
     }
 

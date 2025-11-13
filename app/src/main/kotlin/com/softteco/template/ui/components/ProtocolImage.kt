@@ -28,6 +28,8 @@ import com.softteco.template.utils.protocol.DeviceConnectionStatus
 import com.softteco.template.utils.protocol.getProtocolImage
 import java.util.UUID
 
+private val CONNECTED_COLOR = Color(0xFF4CAF50)
+
 @Composable
 internal fun ProtocolImage(
     device: Device,
@@ -37,11 +39,11 @@ internal fun ProtocolImage(
 ) {
     val borderColor = when (deviceConnectionStatus?.connectionState) {
         ConnectionState.SEARCHING, ConnectionState.CONNECTING -> MaterialTheme.colorScheme.primary
-        ConnectionState.CONNECTED -> Color(0xFF4CAF50) // Green
-        ConnectionState.DISCONNECTED -> MaterialTheme.colorScheme.error // Red
+        ConnectionState.CONNECTED -> CONNECTED_COLOR
+        ConnectionState.DISCONNECTED -> MaterialTheme.colorScheme.error
         else -> Color.Gray
     }
-    
+
     Surface(
         modifier = modifier.border(
             1.dp,

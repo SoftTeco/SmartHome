@@ -12,11 +12,10 @@ interface BluetoothStateChecker {
      * @return true if Bluetooth LE is supported, false otherwise
      */
     fun isBluetoothSupported(): Boolean
-    
+
     /**
      * Check the state of device modules (Bluetooth and Location).
      * @return PermissionType indicating which modules need to be enabled
      */
     fun checkModulesState(): PermissionType
 }
-

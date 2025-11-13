@@ -57,7 +57,7 @@ internal class ZigbeeDeviceRepository(
 
     fun saveNewDevice(device: Device) {
         if (isDeviceSaved(device.macAddress)) return
-        
+
         scope.launch(Dispatchers.IO) {
             thermometerRepository.saveDevice(device)
             thermometerRepository.saveThermometerData(

@@ -62,6 +62,8 @@ import com.softteco.template.utils.protocol.DeviceConnectionStatus
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 
+private val CONNECTED_COLOR = Color(0xFF4CAF50)
+
 @Composable
 fun HomeScreen(
     onAddNewClick: () -> Unit,
@@ -236,99 +238,124 @@ private fun Device(
         )
     ) {
         Column(Modifier.padding(PaddingSmall)) {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                DeviceImage(
-                    imageUri = device.img,
-                    Modifier.size(48.dp),
-                )
-                ProtocolImage(
-                    device,
-                    deviceConnectionStatus,
-                    Modifier.size(24.dp),
-                )
-                if (device is Device.QuickAccess) {
-                    IconButton(onClick = device.onClickAction) {
-                        Icon(
-                            painterResource(device.actionIcon),
-                            contentDescription = stringResource(device.actionDescription)
-                        )
-                    }
-                }
-            }
+            DeviceHeader(device, deviceConnectionStatus)
             Spacer(Modifier.height(PaddingSmall))
-            Column {
-                Text(
-                    device.name,
-                    style = MaterialTheme.typography.labelMedium,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
+            DeviceInfo(device, deviceConnectionStatus)
+        }
+    }
+}
+
+@Composable
+private fun DeviceHeader(
+    device: Device,
+    deviceConnectionStatus: DeviceConnectionStatus?
+) {
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+        DeviceImage(
+            imageUri = device.img,
+            Modifier.size(48.dp),
+        )
+        ProtocolImage(
+            device,
+            deviceConnectionStatus,
+            Modifier.size(24.dp),
+        )
+        if (device is Device.QuickAccess) {
+            IconButton(onClick = device.onClickAction) {
+                Icon(
+                    painterResource(device.actionIcon),
+                    contentDescription = stringResource(device.actionDescription)
                 )
-                Text(
-                    device.location,
-                    style = MaterialTheme.typography.labelSmall,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                
-                // Show status indicator for all connection states
-                deviceConnectionStatus?.let { status ->
-                    when (status.connectionState) {
-                        com.softteco.template.utils.protocol.ConnectionState.SEARCHING -> {
-                            Row(
-                                modifier = Modifier.padding(top = PaddingSmall),
-                                horizontalArrangement = Arrangement.spacedBy(PaddingSmall),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.size(12.dp),
-                                    strokeWidth = 1.5.dp
-                                )
-                                Text(
-                                    text = stringResource(R.string.searching),
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-                            }
-                        }
-                        com.softteco.template.utils.protocol.ConnectionState.CONNECTING -> {
-                            Row(
-                                modifier = Modifier.padding(top = PaddingSmall),
-                                horizontalArrangement = Arrangement.spacedBy(PaddingSmall),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.size(12.dp),
-                                    strokeWidth = 1.5.dp
-                                )
-                                Text(
-                                    text = stringResource(R.string.connecting),
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-                            }
-                        }
-                        com.softteco.template.utils.protocol.ConnectionState.CONNECTED -> {
-                            Text(
-                                text = stringResource(R.string.connected),
-                                style = MaterialTheme.typography.labelSmall,
-                                color = Color(0xFF4CAF50), // Green
-                                modifier = Modifier.padding(top = PaddingSmall)
-                            )
-                        }
-                        com.softteco.template.utils.protocol.ConnectionState.DISCONNECTED -> {
-                            Text(
-                                text = stringResource(R.string.disconnected),
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.error, // Red
-                                modifier = Modifier.padding(top = PaddingSmall)
-                            )
-                        }
-                        else -> {}
-                    }
-                }
             }
         }
+    }
+}
+
+@Composable
+private fun DeviceInfo(
+    device: Device,
+    deviceConnectionStatus: DeviceConnectionStatus?
+) {
+    Column {
+        Text(
+            device.name,
+            style = MaterialTheme.typography.labelMedium,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+        Text(
+            device.location,
+            style = MaterialTheme.typography.labelSmall,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+
+        deviceConnectionStatus?.let { status ->
+            DeviceConnectionStatusIndicator(status.connectionState)
+        }
+    }
+}
+
+@Composable
+private fun DeviceConnectionStatusIndicator(connectionState: com.softteco.template.utils.protocol.ConnectionState) {
+    when (connectionState) {
+        com.softteco.template.utils.protocol.ConnectionState.SEARCHING -> {
+            ConnectionStatusRow(
+                text = stringResource(R.string.searching),
+                color = MaterialTheme.colorScheme.primary,
+                showProgress = true
+            )
+        }
+        com.softteco.template.utils.protocol.ConnectionState.CONNECTING -> {
+            ConnectionStatusRow(
+                text = stringResource(R.string.connecting),
+                color = MaterialTheme.colorScheme.primary,
+                showProgress = true
+            )
+        }
+        com.softteco.template.utils.protocol.ConnectionState.CONNECTED -> {
+            Text(
+                text = stringResource(R.string.connected),
+                style = MaterialTheme.typography.labelSmall,
+                color = CONNECTED_COLOR,
+                modifier = Modifier.padding(top = PaddingSmall)
+            )
+        }
+        com.softteco.template.utils.protocol.ConnectionState.DISCONNECTED -> {
+            Text(
+                text = stringResource(R.string.disconnected),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.error,
+                modifier = Modifier.padding(top = PaddingSmall)
+            )
+        }
+        else -> {}
+    }
+}
+
+@Composable
+private fun ConnectionStatusRow(
+    text: String,
+    color: Color,
+    showProgress: Boolean
+) {
+    Row(
+        modifier = Modifier.padding(top = PaddingSmall),
+        horizontalArrangement = Arrangement.spacedBy(PaddingSmall),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        if (showProgress) {
+            CircularProgressIndicator(
+                modifier = Modifier.size(12.dp),
+                strokeWidth = 1.5.dp
+            )
+        }
+        Text(
+            text = text,
+            style = MaterialTheme.typography.labelSmall,
+            color = color
+        )
     }
 }
 

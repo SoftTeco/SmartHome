@@ -45,11 +45,12 @@ data class ThermometerDataDb(
     )
 
     override fun toEntity(): ThermometerData {
+        val history = valuesHistory.map { it.toEntity() }
         return ThermometerData(
             deviceId = UUID.fromString(deviceId),
             deviceName = deviceName,
             macAddress = macAddress,
-            valuesHistory = valuesHistory.map { it.toEntity() }
+            valuesHistory = history
         )
     }
 }

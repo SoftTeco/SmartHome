@@ -28,6 +28,7 @@ import javax.inject.Singleton
  * Main coordinator for Zigbee operations.
  * Delegates responsibilities to specialized managers.
  */
+@Suppress("TooManyFunctions")
 @Singleton
 internal class ZigbeeHelperImpl @Inject constructor(
     @ApplicationContext private val context: Context,
@@ -57,7 +58,7 @@ internal class ZigbeeHelperImpl @Inject constructor(
 
     override fun init(deviceOperationHandler: DeviceOperationHandler) {
         this.deviceOperationHandler = deviceOperationHandler
-        
+
         initializeManagers()
         deviceRepository.loadSavedDevices()
     }
@@ -153,24 +154,26 @@ internal class ZigbeeHelperImpl @Inject constructor(
             onDeviceDiscovered = deviceRepository::updateDeviceStatus,
             onScanResultCallback = scanResultCallback
         )
-        
+
         // Initialize MQTT callback handler
         mqttHandler = ZigbeeMqttCallbackHandler(
-            thermometerRepository = thermometerRepository,
-            deviceRepository = deviceRepository,
-            scope = scope,
-            scanManager = scanManager,
-            onConnectionComplete = ::handleConnectionComplete,
-            onConnectionLost = ::handleConnectionLost,
-            onDeviceDataReceived = { deviceDataReceivedCallback?.invoke() }
+            MqttCallbackConfig(
+                thermometerRepository = thermometerRepository,
+                deviceRepository = deviceRepository,
+                scope = scope,
+                scanManager = scanManager,
+                onConnectionComplete = ::handleConnectionComplete,
+                onConnectionLost = ::handleConnectionLost,
+                onDeviceDataReceived = { deviceDataReceivedCallback?.invoke() }
+            )
         )
-        
+
         // Initialize connection manager with callback handler
         connectionManager = ZigbeeConnectionManager(
             context = context,
             mqttCallback = mqttHandler
         )
-        
+
         connectionManager.initializeClient()
     }
 
@@ -185,7 +188,7 @@ internal class ZigbeeHelperImpl @Inject constructor(
 
     private fun subscribeToDeviceTopic(topic: String) {
         val macAddress = topic.split("/")[1]
-        
+
         connectionManager.subscribeToTopic(
             topic = topic,
             onSuccess = {
@@ -208,11 +211,11 @@ internal class ZigbeeHelperImpl @Inject constructor(
             Timber.w("Device not found for address: $macAddress")
             return
         }
-        
+
         val updatedStatus = DeviceConnectionStatus.connected(currentStatus.device)
         deviceRepository.updateDeviceStatus(macAddress, updatedStatus)
         deviceRepository.saveNewDevice(currentStatus.device)
-        
+
         deviceConnectedCallback?.invoke()
         startConnectionServiceIfNeeded()
     }
@@ -220,10 +223,10 @@ internal class ZigbeeHelperImpl @Inject constructor(
     private fun handleDeviceDisconnected(topic: String) {
         val macAddress = topic.split("/")[1]
         val currentStatus = deviceRepository.getDeviceStatus(macAddress) ?: return
-        
+
         val updatedStatus = DeviceConnectionStatus.disconnected(currentStatus.device)
         deviceRepository.updateDeviceStatus(macAddress, updatedStatus)
-        
+
         stopConnectionService()
     }
 

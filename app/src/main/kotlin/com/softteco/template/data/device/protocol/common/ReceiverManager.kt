@@ -14,11 +14,10 @@ interface ReceiverManager {
      * @param filter The intent filter
      */
     fun registerReceiver(receiver: BroadcastReceiver, filter: IntentFilter)
-    
+
     /**
      * Unregister a previously registered BroadcastReceiver.
      * @param receiver The receiver to unregister
      */
     fun unregisterReceiver(receiver: BroadcastReceiver)
 }
-

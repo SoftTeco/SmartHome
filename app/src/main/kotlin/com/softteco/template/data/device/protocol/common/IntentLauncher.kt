@@ -13,4 +13,3 @@ interface IntentLauncher {
      */
     fun launchIntent(intent: Intent)
 }
-

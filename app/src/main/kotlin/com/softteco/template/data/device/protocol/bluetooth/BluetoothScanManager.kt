@@ -43,16 +43,15 @@ internal class BluetoothScanManager(
 
     fun startScan() {
         val moduleState = validatePreconditions() ?: return
-        
+
         when (moduleState) {
-            PermissionType.LOCATION_TURNED_OFF -> 
-                intentLauncher.launchIntent(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS))
-            
-            PermissionType.BLUETOOTH_TURNED_OFF -> 
-                intentLauncher.launchIntent(Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE))
-            
-            PermissionType.BLUETOOTH_AND_LOCATION_TURNED_ON -> 
-                performScan()
+            PermissionType.LOCATION_TURNED_OFF -> intentLauncher.launchIntent(
+                Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)
+            )
+            PermissionType.BLUETOOTH_TURNED_OFF -> intentLauncher.launchIntent(
+                Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
+            )
+            PermissionType.BLUETOOTH_AND_LOCATION_TURNED_ON -> performScan()
         }
     }
 
@@ -61,17 +60,17 @@ internal class BluetoothScanManager(
     }
 
     private fun validatePreconditions(): PermissionType? {
-        if (!stateChecker.isBluetoothSupported()) {
-            Timber.w("Bluetooth is not supported")
-            return null
+        return when {
+            !stateChecker.isBluetoothSupported() -> {
+                Timber.w("Bluetooth is not supported")
+                null
+            }
+            !permissionHandler.hasBluetoothPermissions() -> {
+                Timber.w("Bluetooth permissions are not granted")
+                null
+            }
+            else -> stateChecker.checkModulesState()
         }
-        
-        if (!permissionHandler.hasBluetoothPermissions()) {
-            Timber.w("Bluetooth permissions are not granted")
-            return null
-        }
-        
-        return stateChecker.checkModulesState()
     }
 
     private fun performScan() {
@@ -83,7 +82,7 @@ internal class BluetoothScanManager(
         val deviceName = scanResult.device.name ?: return
         val device = createDevice(scanResult, deviceName)
         val status = DeviceConnectionStatus.searching(device)
-        
+
         onDeviceDiscovered(scanResult.device.address, status)
         onScanResultCallback?.invoke(scanResult)
     }

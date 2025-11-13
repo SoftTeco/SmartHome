@@ -33,7 +33,7 @@ fun <T> DashboardValueBlock(
         is Float -> if (value == 0.0f) "-" else value.toString()
         else -> value.toString()
     }
-    
+
     ElevatedCard(
         modifier = modifier,
         onClick = onClick

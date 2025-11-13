@@ -123,6 +123,10 @@
     <string name="device_name">LYWSD03MMC</string>
     <string name="connect">Connect</string>
     <string name="disconnect">Disconnect</string>
+    <string name="searching">Searching…</string>
+    <string name="connecting">Connecting…</string>
+    <string name="connected">Connected</string>
+    <string name="disconnected">Disconnected</string>
     <string name="device_connection_is_running">Device connection is running</string>
     <string name="device_connection_active">Device connection is active</string>
     <string name="device_connection">Device connection</string>

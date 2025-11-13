@@ -38,6 +38,10 @@ object DateUtils {
         return LocalDate.parse(date, formatter).toString()
     }
 
-    fun stringToLocalDateTime(timestamp: String): LocalDateTime =
-        LocalDateTime.parse(timestamp, DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSS"))
+    fun stringToLocalDateTime(timestamp: String) = listOf(
+        DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS"),
+        DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSS"),
+        DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"),
+        DateTimeFormatter.ISO_LOCAL_DATE_TIME
+    ).firstNotNullOf { runCatching { LocalDateTime.parse(timestamp, it) }.getOrNull() }
 }

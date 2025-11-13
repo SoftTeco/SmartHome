@@ -22,6 +22,7 @@ import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -39,6 +40,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
@@ -56,6 +58,7 @@ import com.softteco.template.ui.theme.Dimens.PaddingDefault
 import com.softteco.template.ui.theme.Dimens.PaddingNormal
 import com.softteco.template.ui.theme.Dimens.PaddingSmall
 import com.softteco.template.utils.Analytics
+import com.softteco.template.utils.protocol.DeviceConnectionStatus
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 
@@ -101,7 +104,7 @@ fun HomeScreen(
             )
         },
         { device -> showDeleteDialog.value = device },
-        { device -> viewModel.isDeviceConnected(device, state.devicesConnectionStatusList) },
+        { device -> viewModel.getDeviceConnectionStatus(device, state.devicesConnectionStatusList) },
         modifier
     )
 
@@ -125,7 +128,7 @@ private fun ScreenContent(
     onNotificationsClick: () -> Unit,
     onDeviceClick: (Device) -> Unit,
     onLongClick: (Device) -> Unit,
-    checkConnectionStatus: (Device) -> Boolean?,
+    getDeviceConnectionStatus: (Device) -> DeviceConnectionStatus?,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -154,7 +157,7 @@ private fun ScreenContent(
                 items(state.devices) {
                     Device(
                         it,
-                        checkConnectionStatus(it),
+                        getDeviceConnectionStatus(it),
                         onClick = { onDeviceClick(it) },
                         onLongClick
                     )
@@ -221,7 +224,7 @@ private fun TopAppBar(
 @Composable
 private fun Device(
     device: Device,
-    connectionStatus: Boolean?,
+    deviceConnectionStatus: DeviceConnectionStatus?,
     onClick: () -> Unit,
     onLongClick: (Device) -> Unit,
     modifier: Modifier = Modifier
@@ -240,7 +243,7 @@ private fun Device(
                 )
                 ProtocolImage(
                     device,
-                    connectionStatus,
+                    deviceConnectionStatus,
                     Modifier.size(24.dp),
                 )
                 if (device is Device.QuickAccess) {
@@ -267,6 +270,63 @@ private fun Device(
                     overflow = TextOverflow.Ellipsis,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+                
+                // Show status indicator for all connection states
+                deviceConnectionStatus?.let { status ->
+                    when (status.connectionState) {
+                        com.softteco.template.utils.protocol.ConnectionState.SEARCHING -> {
+                            Row(
+                                modifier = Modifier.padding(top = PaddingSmall),
+                                horizontalArrangement = Arrangement.spacedBy(PaddingSmall),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(12.dp),
+                                    strokeWidth = 1.5.dp
+                                )
+                                Text(
+                                    text = stringResource(R.string.searching),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        }
+                        com.softteco.template.utils.protocol.ConnectionState.CONNECTING -> {
+                            Row(
+                                modifier = Modifier.padding(top = PaddingSmall),
+                                horizontalArrangement = Arrangement.spacedBy(PaddingSmall),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(12.dp),
+                                    strokeWidth = 1.5.dp
+                                )
+                                Text(
+                                    text = stringResource(R.string.connecting),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        }
+                        com.softteco.template.utils.protocol.ConnectionState.CONNECTED -> {
+                            Text(
+                                text = stringResource(R.string.connected),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = Color(0xFF4CAF50), // Green
+                                modifier = Modifier.padding(top = PaddingSmall)
+                            )
+                        }
+                        com.softteco.template.utils.protocol.ConnectionState.DISCONNECTED -> {
+                            Text(
+                                text = stringResource(R.string.disconnected),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.error, // Red
+                                modifier = Modifier.padding(top = PaddingSmall)
+                            )
+                        }
+                        else -> {}
+                    }
+                }
             }
         }
     }
@@ -308,7 +368,7 @@ private fun Preview() {
             onNotificationsClick = {},
             onDeviceClick = {},
             onLongClick = {},
-            checkConnectionStatus = { null }
+            getDeviceConnectionStatus = { null }
         )
     }
 }
@@ -324,7 +384,7 @@ private fun PreviewDevices() {
             onNotificationsClick = {},
             onDeviceClick = {},
             onLongClick = {},
-            checkConnectionStatus = { null }
+            getDeviceConnectionStatus = { null }
         )
     }
 }

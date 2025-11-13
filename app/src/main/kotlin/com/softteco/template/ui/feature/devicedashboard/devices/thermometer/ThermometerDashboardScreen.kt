@@ -33,6 +33,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import com.softteco.template.R
@@ -88,13 +89,14 @@ private fun ScreenContent(
     modifier: Modifier = Modifier,
     onBackClicked: () -> Unit
 ) {
-    Column(
-        modifier = modifier
-            .background(MaterialTheme.colorScheme.background)
-            .fillMaxSize(),
-        verticalArrangement = Arrangement.spacedBy(Dimens.PaddingDefault),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
+    Box(modifier = modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .background(MaterialTheme.colorScheme.background)
+                .fillMaxSize(),
+            verticalArrangement = Arrangement.spacedBy(Dimens.PaddingDefault),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
         var chartType by remember { mutableStateOf(TEMPERATURE) }
         var previousChartType by remember { mutableStateOf(chartType) }
         var timeIntervalMenu by rememberSaveable { mutableStateOf(TimeIntervalMenu.Minute) }
@@ -186,6 +188,26 @@ private fun ScreenContent(
             Chart(state, chartType, timeIntervalMenu)
         }
     }
+
+        val hasCardData = state.thermometer?.currentTemperature != null &&
+                state.thermometer.currentTemperature != 0.0 && state.thermometer.currentHumidity != 0
+        val hasChartData = state.thermometer?.temperatureHistory?.isNotEmpty() == true ||
+                          state.thermometer?.humidityHistory?.isNotEmpty() == true
+
+        if (state.loading && !hasCardData && !hasChartData) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.background.copy(alpha = 0.9f)),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(64.dp),
+                    strokeWidth = 4.dp
+                )
+            }
+        }
+    }
 }
 
 @Composable
@@ -201,7 +223,13 @@ private fun Chart(
             modifier = Modifier.fillMaxWidth(),
             contentAlignment = Alignment.Center
         ) {
-            if (state.loading) {
+            val hasChartData = if (chartType == TEMPERATURE) {
+                state.thermometer?.temperatureHistory?.isNotEmpty() == true
+            } else {
+                state.thermometer?.humidityHistory?.isNotEmpty() == true
+            }
+
+            if (!hasChartData && state.loading) {
                 CircularProgressIndicator(Modifier.size(Dimens.PaddingNormal))
             }
             if (chartType == TEMPERATURE) {

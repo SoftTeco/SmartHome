@@ -1,6 +1,9 @@
 package com.softteco.template.ui.feature.deviceprotocol.zigbee
 
 import android.annotation.SuppressLint
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -10,6 +13,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Card
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -65,11 +70,27 @@ private fun ScreenContent(
             onBackClicked = onBackClicked,
             modifier = Modifier.fillMaxWidth()
         )
-        ZigBeeDevicesList(
-            devices = state.devices,
-            devicesConnectionStatusList = state.devicesConnectionStatusList,
-            onItemClicked = onItemClicked
-        )
+        Box(modifier = Modifier.fillMaxSize()) {
+            ZigBeeDevicesList(
+                devices = state.devices,
+                devicesConnectionStatusList = state.devicesConnectionStatusList,
+                onItemClicked = onItemClicked
+            )
+            
+            if (state.devices.isEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(MaterialTheme.colorScheme.background.copy(alpha = 0.9f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(64.dp),
+                        strokeWidth = 4.dp
+                    )
+                }
+            }
+        }
     }
 }
 
@@ -132,6 +153,45 @@ fun ZigBeeDeviceCard(
                     overflow = TextOverflow.Ellipsis,
                     maxLines = 1
                 )
+                
+                // Show status indicator for SEARCHING or CONNECTING states
+                when (deviceConnectionStatus.connectionState) {
+                    com.softteco.template.utils.protocol.ConnectionState.SEARCHING -> {
+                        Row(
+                            modifier = Modifier.padding(top = Dimens.PaddingSmall),
+                            horizontalArrangement = Arrangement.spacedBy(Dimens.PaddingSmall),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(16.dp),
+                                strokeWidth = 2.dp
+                            )
+                            Text(
+                                text = stringResource(R.string.searching),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+                    com.softteco.template.utils.protocol.ConnectionState.CONNECTING -> {
+                        Row(
+                            modifier = Modifier.padding(top = Dimens.PaddingSmall),
+                            horizontalArrangement = Arrangement.spacedBy(Dimens.PaddingSmall),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(16.dp),
+                                strokeWidth = 2.dp
+                            )
+                            Text(
+                                text = stringResource(R.string.connecting),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+                    else -> {}
+                }
             }
             PrimaryButton(
                 buttonText = stringResource(

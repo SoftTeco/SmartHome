@@ -147,6 +147,13 @@ class HomeViewModel @Inject constructor(
         return statusList.find { it.device.macAddress == device.macAddress }?.isConnected
             ?: false
     }
+    
+    fun getDeviceConnectionStatus(
+        device: Device,
+        statusList: List<DeviceConnectionStatus>
+    ): DeviceConnectionStatus? {
+        return statusList.find { it.device.macAddress == device.macAddress }
+    }
 
     @Immutable
     data class State(

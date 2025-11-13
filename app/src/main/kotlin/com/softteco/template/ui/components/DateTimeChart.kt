@@ -113,6 +113,10 @@ fun CreateDateTimeChart(
             startAxis = createStartAxis(),
             bottomAxis =
             rememberBottomAxis(
+                label = rememberAxisLabelComponent(
+                    color = MaterialTheme.colorScheme.onSurface,
+                    padding = Dimensions.of(horizontal = 4.dp, vertical = 2.dp),
+                ),
                 valueFormatter = bottomAxisValueFormatter,
                 itemPlacer =
                 remember {
@@ -143,7 +147,7 @@ private fun rememberLegend(@StringRes yAxisTitle: Int,) =
                 icon = rememberShapeComponent(Shape.Pill, chartColor),
                 label =
                 rememberTextComponent(
-                    color = vicoTheme.textColor,
+                    color = MaterialTheme.colorScheme.onSurface,
                     textSize = 12.sp,
                     typeface = Typeface.MONOSPACE,
                 ),

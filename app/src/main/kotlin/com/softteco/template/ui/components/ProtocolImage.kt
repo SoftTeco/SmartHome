@@ -5,6 +5,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -22,24 +23,29 @@ import com.softteco.template.R
 import com.softteco.template.data.device.Device
 import com.softteco.template.data.device.ProtocolType
 import com.softteco.template.ui.theme.AppTheme
+import com.softteco.template.utils.protocol.ConnectionState
+import com.softteco.template.utils.protocol.DeviceConnectionStatus
 import com.softteco.template.utils.protocol.getProtocolImage
 import java.util.UUID
 
 @Composable
 internal fun ProtocolImage(
     device: Device,
-    connectionStatus: Boolean?,
+    deviceConnectionStatus: DeviceConnectionStatus?,
     modifier: Modifier = Modifier,
     respectCacheHeaders: Boolean = false,
 ) {
+    val borderColor = when (deviceConnectionStatus?.connectionState) {
+        ConnectionState.SEARCHING, ConnectionState.CONNECTING -> MaterialTheme.colorScheme.primary
+        ConnectionState.CONNECTED -> Color(0xFF4CAF50) // Green
+        ConnectionState.DISCONNECTED -> MaterialTheme.colorScheme.error // Red
+        else -> Color.Gray
+    }
+    
     Surface(
         modifier = modifier.border(
             1.dp,
-            when (connectionStatus) {
-                true -> Color.Green
-                false -> Color.Red
-                else -> Color.Gray
-            },
+            borderColor,
             CircleShape
         ),
         shape = CircleShape
@@ -83,7 +89,7 @@ private fun Preview() {
                 location = "Bedroom",
                 protocolType = ProtocolType.UNKNOWN
             ),
-            connectionStatus = false,
+            deviceConnectionStatus = null,
             Modifier.size(24.dp)
         )
     }
